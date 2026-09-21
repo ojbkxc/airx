@@ -117,18 +117,19 @@ pub fn extract_api_token(headers: &HeaderMap) -> Option<String> {
 
 fn row_to_user(row: &rusqlite::Row) -> rusqlite::Result<User> {
     Ok(User {
-        id: row.get(0)?,
-        username: row.get(1)?,
-        email: row.get(2)?,
-        password: row.get(3)?,
-        nickname: row.get(4)?,
-        avatar: row.get(5)?,
-        group_id: row.get(6)?,
-        is_admin: row.get::<_, i64>(7)? != 0,
-        status: row.get(8)?,
-        remark: row.get(9)?,
-        created_at: crate::db::format_autotime(&row.get::<_, String>(10)?),
-        updated_at: crate::db::format_autotime(&row.get::<_, String>(11)?),
+        id: row.get("id")?,
+        username: row.get("username")?,
+        email: row.get("email")?,
+        password: row.get("password")?,
+        nickname: row.get("nickname")?,
+        avatar: row.get("avatar")?,
+        group_id: row.get("group_id")?,
+        is_admin: row.get::<_, i64>("is_admin")? != 0,
+        status: row.get("status")?,
+        remark: row.get("remark")?,
+        tfa_secret: row.get("tfa_secret")?,
+        created_at: crate::db::format_autotime(&row.get::<_, String>("created_at")?),
+        updated_at: crate::db::format_autotime(&row.get::<_, String>("updated_at")?),
     })
 }
 

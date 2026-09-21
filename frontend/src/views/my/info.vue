@@ -11,6 +11,9 @@
         <el-form-item :label="T('Password')" prop="password">
           <el-button type="danger" @click="showChangePwd">{{ T('ChangePassword') }}</el-button>
         </el-form-item>
+        <el-form-item :label="T('TwoFactorAuth')" prop="tfa">
+          <el-button type="primary" @click="tfaVisible = true">{{ T('TwoFactorAuth') }}</el-button>
+        </el-form-item>
         <el-form-item label="OIDC">
           <el-table :data="oidcData" border fit>
             <el-table-column :label="T('IdP')" prop="op" align="center"></el-table-column>
@@ -34,11 +37,13 @@
       <div v-html="html"></div>
     </el-card>
     <changePwdDialog v-model:visible="changePwdVisible"></changePwdDialog>
+    <tfaDialog v-model:visible="tfaVisible"></tfaDialog>
   </div>
 </template>
 
 <script setup>
   import changePwdDialog from '@/components/changePwdDialog.vue'
+  import tfaDialog from '@/components/tfaDialog.vue'
   import { computed, ref } from 'vue'
   import { useUserStore } from '@/store/user'
   import { useAppStore } from '@/store/app'
@@ -51,6 +56,7 @@
   const appStore = useAppStore()
   const userStore = useUserStore()
   const changePwdVisible = ref(false)
+  const tfaVisible = ref(false)
   const showChangePwd = () => {
     changePwdVisible.value = true
   }

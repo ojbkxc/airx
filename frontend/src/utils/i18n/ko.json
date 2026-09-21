@@ -616,5 +616,38 @@
   },
   "Other": {
     "One": "기타"
+  },
+  "TwoFactorAuth": {
+    "One": "2단계 인증"
+  },
+  "TfaBound": {
+    "One": "활성화됨"
+  },
+  "TfaNotBound": {
+    "One": "비활성화됨"
+  },
+  "TfaBind": {
+    "One": "2단계 인증 활성화"
+  },
+  "TfaUnbind": {
+    "One": "2단계 인증 비활성화"
+  },
+  "TfaScanTip": {
+    "One": "인증기 앱(Google Authenticator, Aegis 등)으로 QR 코드를 스캔하거나 비밀 키를 직접 입력하세요"
+  },
+  "TfaCode": {
+    "One": "인증 코드"
+  },
+  "TfaConfirmBind": {
+    "One": "확인 후 활성화"
+  },
+  "TfaInputCode": {
+    "One": "6자리 코드 입력"
+  },
+  "TfaCodeError": {
+    "One": "인증 코드 오류"
+  },
+  "TfaRequired": {
+    "One": "2단계 인증 코드를 입력하세요"
   }
 }

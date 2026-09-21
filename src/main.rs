@@ -8,6 +8,7 @@ mod db;
 mod i18n;
 mod login_limiter;
 mod models;
+mod totp;
 mod utils;
 mod web;
 

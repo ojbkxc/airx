@@ -582,5 +582,38 @@
   },
   "MyPeer": {
     "One": "My Devices"
+  },
+  "TwoFactorAuth": {
+    "One": "Two-Factor Auth"
+  },
+  "TfaBound": {
+    "One": "Enabled"
+  },
+  "TfaNotBound": {
+    "One": "Disabled"
+  },
+  "TfaBind": {
+    "One": "Enable 2FA"
+  },
+  "TfaUnbind": {
+    "One": "Disable 2FA"
+  },
+  "TfaScanTip": {
+    "One": "Scan the QR code with your authenticator app (Google Authenticator, Aegis, etc.), or enter the secret manually"
+  },
+  "TfaCode": {
+    "One": "Verification code"
+  },
+  "TfaConfirmBind": {
+    "One": "Verify & enable"
+  },
+  "TfaInputCode": {
+    "One": "Enter the 6-digit code"
+  },
+  "TfaCodeError": {
+    "One": "Verification code error"
+  },
+  "TfaRequired": {
+    "One": "Two-factor code required"
   }
 }

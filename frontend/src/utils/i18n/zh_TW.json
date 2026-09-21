@@ -616,5 +616,38 @@
   },
   "Other": {
     "One": "其他"
+  },
+  "TwoFactorAuth": {
+    "One": "兩步驗證"
+  },
+  "TfaBound": {
+    "One": "已啟用"
+  },
+  "TfaNotBound": {
+    "One": "未啟用"
+  },
+  "TfaBind": {
+    "One": "啟用兩步驗證"
+  },
+  "TfaUnbind": {
+    "One": "停用兩步驗證"
+  },
+  "TfaScanTip": {
+    "One": "用驗證器 App（Google Authenticator、Aegis 等）掃描 QR 碼，或手動輸入密鑰"
+  },
+  "TfaCode": {
+    "One": "驗證碼"
+  },
+  "TfaConfirmBind": {
+    "One": "驗證並啟用"
+  },
+  "TfaInputCode": {
+    "One": "輸入 6 位動態碼"
+  },
+  "TfaCodeError": {
+    "One": "動態碼錯誤"
+  },
+  "TfaRequired": {
+    "One": "請輸入兩步驗證動態碼"
   }
 }

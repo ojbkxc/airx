@@ -10,5 +10,6 @@ pub mod db;
 pub mod i18n;
 pub mod login_limiter;
 pub mod models;
+mod totp;
 pub mod utils;
 pub mod web;

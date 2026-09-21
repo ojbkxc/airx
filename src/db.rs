@@ -41,6 +41,11 @@ impl Db {
             }
             conn.execute_batch(stmt)?;
         }
+        // 旧库补列（GORM 原表无 tfa_secret；AIRX TOTP 增强）。幂等。
+        let _ = conn.execute(
+            "ALTER TABLE users ADD COLUMN tfa_secret text NOT NULL DEFAULT ''",
+            [],
+        );
         Ok(())
     }
 

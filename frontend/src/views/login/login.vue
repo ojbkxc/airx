@@ -39,6 +39,11 @@
           </el-input>
         </el-form-item>
 
+        <el-form-item :label="T('TfaCode')" v-if="tfaRequired">
+          <el-input v-model="form.tfa_code" type="password" @keyup.enter.native="login" class="login-input"
+                    :placeholder="T('TfaInputCode')" maxlength="6"></el-input>
+        </el-form-item>
+
         <el-button @click="login" type="primary" class="login-button" :loading="loading">{{ T('Login') }}</el-button>
         <el-button v-if="allowRegister" @click="register" class="login-button">{{ T('Register') }}</el-button>
       </el-form>
@@ -106,10 +111,12 @@
     password: '',
     platform: platform,
     captcha: '',
-    captcha_id: ''
+    captcha_id: '',
+    tfa_code: ''
   })
 
   const captchaCode = ref('')
+  const tfaRequired = ref(false)
   const redirect = route.query?.redirect
 
   const toggleLanguage = () => {
@@ -131,6 +138,12 @@
     if (!res.code) {
       ElMessage.success(T('LoginSuccess'))
       router.push({ path: redirect || '/', replace: true })
+      return
+    }
+    if (res.code === 102) {
+      // TFA：密码已对，提示输入两步验证动态码
+      tfaRequired.value = true
+      ElMessage.info(T('TfaRequired'))
       return
     }
     if (res.code === 110) {

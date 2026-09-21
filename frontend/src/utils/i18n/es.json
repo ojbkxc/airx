@@ -630,5 +630,38 @@
   },
   "Other": {
     "One": "Otro"
+  },
+  "TwoFactorAuth": {
+    "One": "Autenticación de dos factores"
+  },
+  "TfaBound": {
+    "One": "Activada"
+  },
+  "TfaNotBound": {
+    "One": "Desactivada"
+  },
+  "TfaBind": {
+    "One": "Activar 2FA"
+  },
+  "TfaUnbind": {
+    "One": "Desactivar 2FA"
+  },
+  "TfaScanTip": {
+    "One": "Escanee el código QR con su app de autenticación (Google Authenticator, Aegis, etc.) o introduzca la clave manualmente"
+  },
+  "TfaCode": {
+    "One": "Código de verificación"
+  },
+  "TfaConfirmBind": {
+    "One": "Verificar y activar"
+  },
+  "TfaInputCode": {
+    "One": "Introduzca el código de 6 dígitos"
+  },
+  "TfaCodeError": {
+    "One": "Código incorrecto"
+  },
+  "TfaRequired": {
+    "One": "Se requiere el código de dos factores"
   }
 }

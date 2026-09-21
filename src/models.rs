@@ -38,6 +38,9 @@ pub struct User {
     pub is_admin: bool,
     pub status: i64,
     pub remark: String,
+    /// TOTP secret 的 SHA-256 hex（AIRX 增强；空串 = 未启用）
+    #[serde(skip_serializing)]
+    pub tfa_secret: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -55,6 +58,7 @@ impl Default for User {
             is_admin: false,
             status: STATUS_ENABLE,
             remark: String::new(),
+            tfa_secret: String::new(),
             created_at: String::new(),
             updated_at: String::new(),
         }

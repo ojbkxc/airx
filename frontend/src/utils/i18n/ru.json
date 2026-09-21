@@ -630,5 +630,38 @@
   },
   "Other": {
     "One": "Другое"
+  },
+  "TwoFactorAuth": {
+    "One": "Двухфакторная аутентификация"
+  },
+  "TfaBound": {
+    "One": "Включена"
+  },
+  "TfaNotBound": {
+    "One": "Отключена"
+  },
+  "TfaBind": {
+    "One": "Включить 2FA"
+  },
+  "TfaUnbind": {
+    "One": "Отключить 2FA"
+  },
+  "TfaScanTip": {
+    "One": "Отсканируйте QR-код приложением-аутентификатором (Google Authenticator, Aegis и т.п.) или введите ключ вручную"
+  },
+  "TfaCode": {
+    "One": "Код подтверждения"
+  },
+  "TfaConfirmBind": {
+    "One": "Проверить и включить"
+  },
+  "TfaInputCode": {
+    "One": "Введите 6-значный код"
+  },
+  "TfaCodeError": {
+    "One": "Неверный код"
+  },
+  "TfaRequired": {
+    "One": "Введите код двухфакторной проверки"
   }
 }

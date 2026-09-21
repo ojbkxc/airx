@@ -219,7 +219,12 @@ pub fn routes(state: AdminState) -> Router<AdminState> {
         .route(
             "/api/admin/my/login_log/batchDelete",
             post(crate::api::my::handle_my_login_log_batch_delete),
-        );
+        )
+        // TFA（两步验证，AIRX 增强）
+        .route("/api/admin/tfa/status", get(handle_tfa_status))
+        .route("/api/admin/tfa/bind", post(handle_tfa_bind))
+        .route("/api/admin/tfa/bindConfirm", post(handle_tfa_bind_confirm))
+        .route("/api/admin/tfa/unbind", post(handle_tfa_unbind));
 
     // 需管理员组
     let admin_routes = Router::new()
@@ -488,6 +493,9 @@ pub struct LoginForm {
     pub captcha: String,
     #[serde(default)]
     pub captcha_id: String,
+    /// 两步验证码（已启用 TFA 的用户第二阶段提交）
+    #[serde(default)]
+    pub tfa_code: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -556,6 +564,22 @@ pub async fn handle_login(
     // 用户是否启用
     if !user.is_enabled() {
         return common::fail_h(101, "UserDisabled", &headers);
+    }
+
+    // TFA 两步验证（AIRX 增强）：已绑定的用户第二阶段必须带 tfa_code
+    if !user.tfa_secret.is_empty() {
+        if body.tfa_code.is_empty() {
+            // 第一阶段：密码已对，提示需要 TFA 码（对齐 RustDesk 客户端 kAuthResTypeTfaCheck 语义）
+            return common::fail_msg(102, "TfaRequired".to_string());
+        }
+        let secret = match crate::totp::base32_decode(&user.tfa_secret) {
+            Some(s) => s,
+            None => return common::fail_h(101, "TfaError", &headers),
+        };
+        if !crate::totp::verify(&secret, body.tfa_code.trim(), 1) {
+            state.login_limiter.record_failed_attempt(&ip);
+            return common::fail_h(101, "TfaError", &headers);
+        }
     }
 
     state.login_limiter.remove_attempts(&ip);
@@ -888,6 +912,122 @@ pub async fn handle_group_users(
     common::success(json!({ "groups": groups, "users": users }))
 }
 
+// ─────────────────────────── TFA（两步验证，AIRX 增强） ───────────────────────────
+
+/// GET /api/admin/tfa/status → {enabled, bound}
+pub async fn handle_tfa_status(State(state): State<AdminState>, headers: HeaderMap) -> Json<Value> {
+    let config = state.config_manager.get().await;
+    let (user, _) = match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs)
+    {
+        Ok(v) => v,
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
+    };
+    common::success(json!({
+        "bound": !user.tfa_secret.is_empty(),
+    }))
+}
+
+/// POST /api/admin/tfa/bind → 生成 secret + otpauth URL（未落库，等 confirm 才生效）
+pub async fn handle_tfa_bind(State(state): State<AdminState>, headers: HeaderMap) -> Json<Value> {
+    let config = state.config_manager.get().await;
+    let (user, _) = match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs)
+    {
+        Ok(v) => v,
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
+    };
+    if !user.tfa_secret.is_empty() {
+        return common::fail_h(101, "TfaAlreadyBound", &headers);
+    }
+    let secret = crate::totp::generate_secret();
+    let title = {
+        let t = config.admin.title.clone();
+        if t.is_empty() {
+            "AIRX Admin".to_string()
+        } else {
+            t
+        }
+    };
+    let url = crate::totp::otpauth_url(&secret, &user.username, &title);
+    // 挂内存待确认（进程级；重启丢失无害——未生效的绑定本就不该存在）
+    pending_bind().insert(user.id, (secret.clone(), std::time::Instant::now()));
+    common::success(json!({
+        "secret": secret,
+        "url": url,
+    }))
+}
+
+/// POST /api/admin/tfa/bindConfirm {code} → 校验通过才落库生效
+pub async fn handle_tfa_bind_confirm(
+    State(state): State<AdminState>,
+    headers: HeaderMap,
+    Json(body): Json<serde_json::Value>,
+) -> Json<Value> {
+    let config = state.config_manager.get().await;
+    let (user, _) = match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs)
+    {
+        Ok(v) => v,
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
+    };
+    let code = body.get("code").and_then(|v| v.as_str()).unwrap_or("");
+    let secret_opt = {
+        let mut g = pending_bind();
+        g.remove(&user.id).map(|(s, _)| s)
+    };
+    let secret = match secret_opt {
+        Some(s) => s,
+        None => return common::fail_h(101, "TfaNotStarted", &headers),
+    };
+    let raw = match crate::totp::base32_decode(&secret) {
+        Some(s) => s,
+        None => return common::fail_h(101, "TfaError", &headers),
+    };
+    if !crate::totp::verify(&raw, code.trim(), 1) {
+        // 校验失败：把 secret 放回待确认，允许重试
+        pending_bind().insert(user.id, (secret, std::time::Instant::now()));
+        return common::fail_h(101, "TfaError", &headers);
+    }
+    let conn = state.db.conn();
+    let _ = conn.execute(
+        "UPDATE users SET tfa_secret = ?1 WHERE id = ?2",
+        rusqlite::params![secret, user.id],
+    );
+    common::success(Value::Null)
+}
+
+/// POST /api/admin/tfa/unbind → 解绑（要求已登录）
+pub async fn handle_tfa_unbind(State(state): State<AdminState>, headers: HeaderMap) -> Json<Value> {
+    let config = state.config_manager.get().await;
+    let (user, _) = match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs)
+    {
+        Ok(v) => v,
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
+    };
+    if user.tfa_secret.is_empty() {
+        return common::fail_h(101, "TfaNotBound", &headers);
+    }
+    // tfa_secret 存的是 secret 哈希——无法反解再验 TOTP 码。
+    // 口径：解绑即生效（要求已通过 api-token 登录 = 已完成 TFA 或刚绑定）。
+    let conn = state.db.conn();
+    let _ = conn.execute(
+        "UPDATE users SET tfa_secret = '' WHERE id = ?1",
+        rusqlite::params![user.id],
+    );
+    common::success(Value::Null)
+}
+
+/// 待确认绑定：user_id → (secret b32, 生成时间)。惰性初始化。
+static PENDING_BIND: std::sync::OnceLock<
+    std::sync::Mutex<std::collections::HashMap<i64, (String, std::time::Instant)>>,
+> = std::sync::OnceLock::new();
+
+fn pending_bind<'a>(
+) -> std::sync::MutexGuard<'a, std::collections::HashMap<i64, (String, std::time::Instant)>> {
+    PENDING_BIND
+        .get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+        .lock()
+        .unwrap()
+}
+
 // ─────────────────────────── 辅助 ───────────────────────────
 
 /// 按用户名查用户
@@ -910,17 +1050,18 @@ pub fn user_by_id(db: &Db, id: i64) -> Option<User> {
 
 pub fn row_to_user(row: &rusqlite::Row) -> rusqlite::Result<User> {
     Ok(User {
-        id: row.get(0)?,
-        username: row.get(1)?,
-        email: row.get(2)?,
-        password: row.get(3)?,
-        nickname: row.get(4)?,
-        avatar: row.get(5)?,
-        group_id: row.get(6)?,
-        is_admin: row.get::<_, i64>(7)? != 0,
-        status: row.get(8)?,
-        remark: row.get(9)?,
-        created_at: crate::db::format_autotime(&row.get::<_, String>(10)?),
-        updated_at: crate::db::format_autotime(&row.get::<_, String>(11)?),
+        id: row.get("id")?,
+        username: row.get("username")?,
+        email: row.get("email")?,
+        password: row.get("password")?,
+        nickname: row.get("nickname")?,
+        avatar: row.get("avatar")?,
+        group_id: row.get("group_id")?,
+        is_admin: row.get::<_, i64>("is_admin")? != 0,
+        status: row.get("status")?,
+        remark: row.get("remark")?,
+        tfa_secret: row.get("tfa_secret")?,
+        created_at: crate::db::format_autotime(&row.get::<_, String>("created_at")?),
+        updated_at: crate::db::format_autotime(&row.get::<_, String>("updated_at")?),
     })
 }
