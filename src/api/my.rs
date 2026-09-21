@@ -21,8 +21,8 @@ async fn auth_user(
     auth::backend_user_auth(&state.db, headers, config.app.token_expire_secs)
 }
 
-fn auth_err(e: (i64, &'static str)) -> Json<Value> {
-    common::fail(e.0, e.1)
+fn auth_err(e: (i64, &'static str), headers: &HeaderMap) -> Json<Value> {
+    common::fail_h(e.0, e.1, headers)
 }
 
 // ─────────────────────────── my/share_record ───────────────────────────
@@ -35,7 +35,7 @@ pub async fn handle_my_share_record_list(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     crud::share_record_list(&state, &q, Some(user.id))
 }
@@ -48,11 +48,11 @@ pub async fn handle_my_share_record_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let res = conn.execute(
@@ -74,7 +74,7 @@ pub async fn handle_my_share_record_batch_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let ids: Vec<i64> = b
         .get("ids")
@@ -82,7 +82,7 @@ pub async fn handle_my_share_record_batch_delete(
         .map(|a| a.iter().filter_map(|x| x.as_i64()).collect())
         .unwrap_or_default();
     if ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
@@ -99,7 +99,7 @@ pub async fn handle_my_share_record_batch_delete(
         .unwrap_or(0);
     if total != ids.len() as i64 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     sql = format!(
         "DELETE FROM share_records WHERE user_id = ?1 AND id IN ({})",
@@ -123,7 +123,7 @@ pub async fn handle_my_address_book_list(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     crud::ab_list(&state, &q, Some(user.id))
 }
@@ -136,11 +136,11 @@ pub async fn handle_my_address_book_create(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let mut body = b.clone();
     body["user_id"] = json!(user.id);
-    crud::address_book_create_body(&state, &body)
+    crud::address_book_create_body(&state, &headers, &body)
 }
 
 /// POST /api/admin/my/address_book/update
@@ -151,11 +151,11 @@ pub async fn handle_my_address_book_update(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let mut body = b.clone();
     body["user_id"] = json!(user.id);
-    crud::address_book_update_body(&state, &body, Some(user.id))
+    crud::address_book_update_body(&state, &headers, &body, Some(user.id))
 }
 
 /// POST /api/admin/my/address_book/delete
@@ -166,7 +166,7 @@ pub async fn handle_my_address_book_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let rid = b
         .get("row_id")
@@ -174,7 +174,7 @@ pub async fn handle_my_address_book_delete(
         .or_else(|| b.get("id").and_then(|v| v.as_i64()))
         .unwrap_or(0);
     if rid == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let owner: Option<i64> = conn
@@ -195,7 +195,7 @@ pub async fn handle_my_address_book_delete(
         }
         _ => {
             drop(conn);
-            common::fail(101, "ItemNotFound")
+            common::fail_h(101, "ItemNotFound", &headers)
         }
     }
 }
@@ -208,11 +208,11 @@ pub async fn handle_my_address_book_batch_create_from_peers(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let mut body = b.clone();
     body["user_ids"] = json!([user.id]);
-    crud::address_book_batch_create_from_peers_body(&state, &body)
+    crud::address_book_batch_create_from_peers_body(&state, &headers, &body)
 }
 
 /// POST /api/admin/my/address_book/batchUpdateTags —— 更新自己的多条 ab 的 tags
@@ -223,7 +223,7 @@ pub async fn handle_my_address_book_batch_update_tags(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let ids: Vec<i64> = b
         .get("ids")
@@ -232,7 +232,7 @@ pub async fn handle_my_address_book_batch_update_tags(
         .unwrap_or_default();
     let tags = crud::tags_to_json(b.get("tags"));
     if ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let now = crud::now_sql();
@@ -248,7 +248,7 @@ pub async fn handle_my_address_book_batch_update_tags(
     }
     drop(conn);
     if n == 0 {
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     common::success(Value::Null)
 }
@@ -263,7 +263,7 @@ pub async fn handle_my_tag_list(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     crud::tag_list(&state, &q, Some(user.id))
 }
@@ -276,11 +276,11 @@ pub async fn handle_my_tag_create(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let mut body = b.clone();
     body["user_id"] = json!(user.id);
-    crud::tag_create_body(&state, &body)
+    crud::tag_create_body(&state, &headers, &body)
 }
 
 /// POST /api/admin/my/tag/update —— 仅自己的
@@ -291,11 +291,11 @@ pub async fn handle_my_tag_update(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let mut body = b.clone();
     body["user_id"] = json!(user.id);
-    crud::tag_update_body(&state, &body, Some(user.id))
+    crud::tag_update_body(&state, &headers, &body, Some(user.id))
 }
 
 /// POST /api/admin/my/tag/delete
@@ -306,11 +306,11 @@ pub async fn handle_my_tag_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -322,7 +322,7 @@ pub async fn handle_my_tag_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute(
         "DELETE FROM tags WHERE id = ?1 AND user_id = ?2",
@@ -345,7 +345,7 @@ pub async fn handle_my_address_book_collection_list(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     crud::abc_list(&state, &q, Some(user.id))
 }
@@ -358,11 +358,11 @@ pub async fn handle_my_address_book_collection_create(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let now = crud::now_sql();
@@ -385,12 +385,12 @@ pub async fn handle_my_address_book_collection_update(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if id <= 0 || name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -402,7 +402,7 @@ pub async fn handle_my_address_book_collection_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute(
         "UPDATE address_book_collections SET name = ?1, updated_at = ?2 WHERE id = ?3 AND user_id = ?4",
@@ -423,11 +423,11 @@ pub async fn handle_my_address_book_collection_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -439,7 +439,7 @@ pub async fn handle_my_address_book_collection_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     // 级联：rules + address_books + collection（对齐 Go service.AddressBookCollection.Delete）
     let _ = conn.execute_batch("BEGIN");
@@ -473,7 +473,7 @@ pub async fn handle_my_address_book_collection_rule_list(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     crud::abcr_list(&state, &q, Some(user.id))
 }
@@ -486,11 +486,11 @@ pub async fn handle_my_address_book_collection_rule_create(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let mut body = b.clone();
     body["user_id"] = json!(user.id);
-    crud::abcr_create_body(&state, &body)
+    crud::abcr_create_body(&state, &headers, &body)
 }
 
 /// POST /api/admin/my/address_book_collection_rule/update
@@ -501,7 +501,7 @@ pub async fn handle_my_address_book_collection_rule_update(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let rule = b.get("rule").and_then(|v| v.as_i64()).unwrap_or(0);
@@ -509,10 +509,10 @@ pub async fn handle_my_address_book_collection_rule_update(
     let to_id = b.get("to_id").and_then(|v| v.as_i64()).unwrap_or(0);
     let collection_id = b.get("collection_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 || collection_id <= 0 || to_id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     if !(1..=3).contains(&rule) || (type_ != 1 && type_ != 2) {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     // 只能改自己的 rule
@@ -525,7 +525,7 @@ pub async fn handle_my_address_book_collection_rule_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     // collection owner 校验
     let owner: i64 = conn
@@ -537,7 +537,7 @@ pub async fn handle_my_address_book_collection_rule_update(
         .unwrap_or(0);
     if owner != user.id {
         drop(conn);
-        return common::fail(101, "CollectionNotFound");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let res = conn.execute(
         "UPDATE address_book_collection_rules SET rule = ?1, type = ?2, to_id = ?3, collection_id = ?4, updated_at = ?5 WHERE id = ?6 AND user_id = ?7",
@@ -558,11 +558,11 @@ pub async fn handle_my_address_book_collection_rule_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -574,7 +574,7 @@ pub async fn handle_my_address_book_collection_rule_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute(
         "DELETE FROM address_book_collection_rules WHERE id = ?1 AND user_id = ?2",
@@ -597,7 +597,7 @@ pub async fn handle_my_peer_list(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     crud::peer_list(&state, &q, Some(user.id))
 }
@@ -622,7 +622,7 @@ pub async fn handle_my_login_log_list(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let (page, size) = (
         if q.page <= 0 { 1 } else { q.page },
@@ -668,11 +668,11 @@ pub async fn handle_my_login_log_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -684,7 +684,7 @@ pub async fn handle_my_login_log_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute(
         "UPDATE login_logs SET is_deleted = 1, updated_at = ?1 WHERE id = ?2 AND user_id = ?3",
@@ -705,7 +705,7 @@ pub async fn handle_my_login_log_batch_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let ids: Vec<i64> = b
         .get("ids")
@@ -713,7 +713,7 @@ pub async fn handle_my_login_log_batch_delete(
         .map(|a| a.iter().filter_map(|x| x.as_i64()).collect())
         .unwrap_or_default();
     if ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");

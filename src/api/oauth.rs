@@ -830,11 +830,11 @@ pub async fn handle_admin_oidc_auth_query(
 ) -> Response {
     let code = q.get("code").cloned().unwrap_or_default();
     if code.is_empty() {
-        return common_error_response("ParamsError");
+        return common_error_response_h("ParamsError", &headers);
     }
     let v = match cache_get(&code) {
         Some(v) => v,
-        None => return common_error_response("OauthExpired"),
+        None => return common_error_response_h("OauthExpired", &headers),
     };
     // UserId 为 0 → 还在授权中（对齐 Go 1.4.2 webclient oidc fix）
     if v.user_id == 0 {
@@ -846,7 +846,7 @@ pub async fn handle_admin_oidc_auth_query(
     }
     let user = match crate::api::admin::user_by_id(&state.db, v.user_id) {
         Some(u) if u.id > 0 => u,
-        _ => return common_error_response("UserNotFound"),
+        _ => return common_error_response_h("UserNotFound", &headers),
     };
     cache_delete(&code);
     let ip = crate::utils::client_ip(&headers, "");
@@ -872,6 +872,12 @@ fn common_error_response(msg: &str) -> Response {
     (status, body).into_response()
 }
 
+/// 客户端 auth-query 错误（对齐 Go response.Error(c, TranslateMsg(c, key))）
+fn common_error_response_h(msg: &str, headers: &HeaderMap) -> Response {
+    let (status, body) = crate::api::common::error_h(msg, headers);
+    (status, body).into_response()
+}
+
 // ─────────────────────────── 管理面 OAuth 绑定（/api/admin/oauth/*） ───────────────────────────
 
 /// GET /api/admin/oauth/info（对齐 Go admin.Oauth.Info；需登录）
@@ -884,16 +890,16 @@ pub async fn handle_oauth_info(
     let (user, _) =
         match crate::auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs) {
             Ok(v) => v,
-            Err((code, msg)) => return crate::api::common::fail(code, msg),
+            Err((code, msg)) => return crate::api::common::fail_h(code, msg, &headers),
         };
     let _ = user;
     let code = q.get("code").cloned().unwrap_or_default();
     if code.is_empty() {
-        return crate::api::common::fail(101, "ParamsError");
+        return crate::api::common::fail_h(101, "ParamsError", &headers);
     }
     match cache_get(&code) {
         Some(v) => crate::api::common::success(v.to_json()),
-        None => crate::api::common::fail(101, "ItemNotFound"),
+        None => crate::api::common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -907,7 +913,9 @@ pub async fn handle_oauth_bind(
     let (user, _) =
         match crate::auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs) {
             Ok(v) => v,
-            Err((code, msg)) => return crate::api::common::fail(code, msg).into_response(),
+            Err((code, msg)) => {
+                return crate::api::common::fail_h(code, msg, &headers).into_response()
+            }
         };
     let op = body
         .get("op")
@@ -915,12 +923,13 @@ pub async fn handle_oauth_bind(
         .unwrap_or("")
         .to_string();
     if op.is_empty() {
-        return crate::api::common::fail(101, "ParamsError").into_response();
+        return crate::api::common::fail_h(101, "ParamsError", &headers).into_response();
     }
     // 已绑定过 → 拒绝
     if let Some(ut) = user_third_by_user_id(&state.db, user.id, &op) {
         if ut.id > 0 {
-            return crate::api::common::fail(101, "OauthHasBindOtherUser").into_response();
+            return crate::api::common::fail_h(101, "OauthHasBindOtherUser", &headers)
+                .into_response();
         }
     }
     let (state_code, verifier, nonce, url) = match begin_auth(&state, &op).await {
@@ -952,7 +961,7 @@ pub async fn handle_oauth_confirm(
     let (user, _) =
         match crate::auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs) {
             Ok(v) => v,
-            Err((code, msg)) => return crate::api::common::fail(code, msg),
+            Err((code, msg)) => return crate::api::common::fail_h(code, msg, &headers),
         };
     let code = body
         .get("code")
@@ -960,17 +969,17 @@ pub async fn handle_oauth_confirm(
         .unwrap_or("")
         .to_string();
     if code.is_empty() {
-        return crate::api::common::fail(101, "ParamsError");
+        return crate::api::common::fail_h(101, "ParamsError", &headers);
     }
     let mut v = match cache_get(&code) {
         Some(v) => v,
-        None => return crate::api::common::fail(101, "OauthExpired"),
+        None => return crate::api::common::fail_h(101, "OauthExpired", &headers),
     };
     v.user_id = user.id;
     cache_set(&code, v, 0);
     match cache_get(&code) {
         Some(v) => crate::api::common::success(v.to_json()),
-        None => crate::api::common::fail(101, "OauthExpired"),
+        None => crate::api::common::fail_h(101, "OauthExpired", &headers),
     }
 }
 
@@ -984,7 +993,7 @@ pub async fn handle_oauth_bind_confirm(
     let (user, _) =
         match crate::auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs) {
             Ok(v) => v,
-            Err((code, msg)) => return crate::api::common::fail(code, msg),
+            Err((code, msg)) => return crate::api::common::fail_h(code, msg, &headers),
         };
     let code = body
         .get("code")
@@ -992,11 +1001,11 @@ pub async fn handle_oauth_bind_confirm(
         .unwrap_or("")
         .to_string();
     if code.is_empty() {
-        return crate::api::common::fail(101, "ParamsError");
+        return crate::api::common::fail_h(101, "ParamsError", &headers);
     }
     let mut v = match cache_get(&code) {
         Some(v) => v,
-        None => return crate::api::common::fail(101, "OauthExpired"),
+        None => return crate::api::common::fail_h(101, "OauthExpired", &headers),
     };
     // 用缓存的 oauth 用户信息绑定（对齐 Go ToOauthUser → BindOauthUser）
     let ou = OauthUser {
@@ -1011,7 +1020,7 @@ pub async fn handle_oauth_bind_confirm(
         .map(|o| o.oauth_type)
         .unwrap_or_default();
     if bind_oauth_user(&state.db, user.id, &ou, &oauth_type, &v.op).is_err() {
-        return crate::api::common::fail(101, "BindFail");
+        return crate::api::common::fail_h(101, "BindFail", &headers);
     }
     v.user_id = user.id;
     let payload = v.to_json();
@@ -1029,7 +1038,7 @@ pub async fn handle_oauth_unbind(
     let (user, _) =
         match crate::auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs) {
             Ok(v) => v,
-            Err((code, msg)) => return crate::api::common::fail(code, msg),
+            Err((code, msg)) => return crate::api::common::fail_h(code, msg, &headers),
         };
     let op = body
         .get("op")
@@ -1037,14 +1046,14 @@ pub async fn handle_oauth_unbind(
         .unwrap_or("")
         .to_string();
     if op.is_empty() {
-        return crate::api::common::fail(101, "ParamsError");
+        return crate::api::common::fail_h(101, "ParamsError", &headers);
     }
     match user_third_by_user_id(&state.db, user.id, &op) {
         Some(ut) if ut.id > 0 => {}
-        _ => return crate::api::common::fail(101, "ItemNotFound"),
+        _ => return crate::api::common::fail_h(101, "ItemNotFound", &headers),
     }
     if unbind_oauth_user(&state.db, user.id, &op).is_err() {
-        return crate::api::common::fail(101, "OperationFailed");
+        return crate::api::common::fail_h(101, "OperationFailed", &headers);
     }
     crate::api::common::success(Value::Null)
 }
@@ -1119,11 +1128,11 @@ pub async fn handle_oidc_auth_query(
 ) -> Response {
     let code = q.get("code").cloned().unwrap_or_default();
     if code.is_empty() {
-        return common_error_response("ParamsError");
+        return common_error_response_h("ParamsError", &headers);
     }
     let v = match cache_get(&code) {
         Some(v) => v,
-        None => return common_error_response("OauthExpired"),
+        None => return common_error_response_h("OauthExpired", &headers),
     };
     if v.user_id == 0 {
         return Json(json!({
@@ -1134,7 +1143,7 @@ pub async fn handle_oidc_auth_query(
     }
     let user = match crate::api::admin::user_by_id(&state.db, v.user_id) {
         Some(u) if u.id > 0 => u,
-        _ => return common_error_response("UserNotFound"),
+        _ => return common_error_response_h("UserNotFound", &headers),
     };
     cache_delete(&code);
     let ip = crate::utils::client_ip(&headers, "");
@@ -1271,16 +1280,15 @@ pub async fn handle_oauth_msg(
     let lang = q.get("lang").cloned().unwrap_or_default();
     let title_key = q.get("title").cloned().unwrap_or_default();
     let msg_key = q.get("msg").cloned().unwrap_or_default();
+    let lang_tag = crate::i18n::lang_from_accept_language(&lang);
     let mut res = String::new();
     if !title_key.is_empty() {
-        if let Some(t) = i18n_translate(&lang, &title_key) {
-            res.push_str(&format!(";title='{}';", t));
-        }
+        let t = crate::i18n::translate(lang_tag, &title_key);
+        res.push_str(&format!(";title='{}';", t));
     }
     if !msg_key.is_empty() {
-        if let Some(m) = i18n_translate(&lang, &msg_key) {
-            res.push_str(&format!("msg = '{}';", m));
-        }
+        let m = crate::i18n::translate(lang_tag, &msg_key);
+        res.push_str(&format!("msg = '{}';", m));
     }
     (
         StatusCode::OK,
@@ -1288,52 +1296,6 @@ pub async fn handle_oauth_msg(
         res,
     )
         .into_response()
-}
-
-/// 极简 i18n（仅 OAuth 流程用到的键；对齐 Go resources/i18n zh_CN/en）
-fn i18n_translate(lang: &str, key: &str) -> Option<String> {
-    let zh = matches!(lang, l if l.starts_with("zh"));
-    let table: &[(&str, &str, &str)] = &[
-        // (key, en, zh)
-        ("ParamsError", "Params validation failed.", "参数错误。"),
-        ("OperationFailed", "the operation failed.", "操作失败。"),
-        ("ItemNotFound", "Item not found.", "数据不存在。"),
-        ("ConfigNotFound", "Config not found.", "配置不存在。"),
-        (
-            "OauthExpired",
-            "Oauth expired, please try again.",
-            "授权过期，请重新授权。",
-        ),
-        ("OauthFailed", "Oauth failed.", "授权失败。"),
-        (
-            "OauthHasBindOtherUser",
-            "Oauth has bind other user.",
-            "授权已绑定其他用户。",
-        ),
-        ("BindFail", "Bind fail.", "绑定失败。"),
-        ("BindSuccess", "Bind success.", "绑定成功。"),
-        (
-            "OauthHasBeenSuccess",
-            "Oauth has been success.",
-            "授权已成功。",
-        ),
-        ("OauthSuccess", "Oauth success.", "授权成功。"),
-        (
-            "OauthRegisterFailed",
-            "Oauth register failed.",
-            "授权注册失败。",
-        ),
-    ];
-    table
-        .iter()
-        .find(|(k, _, _)| *k == key)
-        .map(|(_, en, zh_cn)| {
-            if zh {
-                zh_cn.to_string()
-            } else {
-                en.to_string()
-            }
-        })
 }
 
 // ─────────────────────────── provider 列表 ───────────────────────────

@@ -5,6 +5,7 @@ mod api;
 mod auth;
 mod config;
 mod db;
+mod i18n;
 mod login_limiter;
 mod models;
 mod utils;

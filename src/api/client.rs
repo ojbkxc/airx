@@ -294,6 +294,8 @@ async fn handle_logout(State(state): State<AdminState>, headers: HeaderMap) -> R
 }
 
 fn error_text(msg: &str) -> Response {
+    // 客户端 API 的 RustDesk 客户端不解析译文，且多数调用点无 headers；
+    // Go 此处走 TranslateMsg，但译文对机器客户端无意义——保持键名（未收录键同样回退键名）
     let (status, body) = common::error(msg);
     (status, body).into_response()
 }

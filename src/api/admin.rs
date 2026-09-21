@@ -508,14 +508,14 @@ pub async fn handle_login(
 ) -> Json<Value> {
     let config = state.config_manager.get().await;
     if config.app.disable_pwd_login {
-        return common::fail(101, "PwdLoginDisabled");
+        return common::fail_h(101, "PwdLoginDisabled", &headers);
     }
 
     // 登录限流（对齐 Go LoginLimiter）：封禁 → 423；达到阈值 → 要求验证码
     let ip = crate::utils::client_ip(&headers, "127.0.0.1");
     let (banned, need_captcha) = state.login_limiter.check_security_status(&ip);
     if banned {
-        return common::fail_msg(423, "Banned".to_string());
+        return common::fail_h(423, "Banned", &headers);
     }
     if need_captcha
         && (body.captcha_id.is_empty()
@@ -524,7 +524,7 @@ pub async fn handle_login(
                 .login_limiter
                 .verify_captcha(&body.captcha_id, &body.captcha))
     {
-        return common::fail(101, "CaptchaError");
+        return common::fail_h(101, "CaptchaError", &headers);
     }
 
     // 查用户
@@ -535,7 +535,7 @@ pub async fn handle_login(
             state.login_limiter.record_failed_attempt(&ip);
             let (_, need) = state.login_limiter.check_security_status(&ip);
             let code = if need { 110 } else { 101 };
-            return common::fail(code, "UsernameOrPasswordError");
+            return common::fail_h(code, "UsernameOrPasswordError", &headers);
         }
     };
     // 校验密码
@@ -544,7 +544,7 @@ pub async fn handle_login(
         state.login_limiter.record_failed_attempt(&ip);
         let (_, need) = state.login_limiter.check_security_status(&ip);
         let code = if need { 110 } else { 101 };
-        return common::fail(code, "UsernameOrPasswordError");
+        return common::fail_h(code, "UsernameOrPasswordError", &headers);
     }
     if let Some(new_hash) = new_hash {
         let conn = state.db.conn();
@@ -555,7 +555,7 @@ pub async fn handle_login(
     }
     // 用户是否启用
     if !user.is_enabled() {
-        return common::fail(101, "UserDisabled");
+        return common::fail_h(101, "UserDisabled", &headers);
     }
 
     state.login_limiter.remove_attempts(&ip);
@@ -637,7 +637,7 @@ pub async fn handle_user_current(
     let config = state.config_manager.get().await;
     match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs) {
         Ok((user, token)) => login_success_payload(&state, &user, &token),
-        Err((code, msg)) => common::fail(code, msg),
+        Err((code, msg)) => common::fail_h(code, msg, &headers),
     }
 }
 
@@ -667,7 +667,7 @@ pub async fn handle_login_options(
     let ip = crate::utils::client_ip(&headers, "127.0.0.1");
     let (banned, need_captcha) = state.login_limiter.check_security_status(&ip);
     if banned {
-        return common::fail(101, "LoginBanned");
+        return common::fail_h(101, "LoginBanned", &headers);
     }
     common::success(json!({
         "ops": ops,
@@ -683,16 +683,16 @@ pub async fn handle_captcha(State(state): State<AdminState>, headers: HeaderMap)
     let ip = crate::utils::client_ip(&headers, "127.0.0.1");
     let (banned, need_captcha) = state.login_limiter.check_security_status(&ip);
     if banned {
-        return common::fail(101, "LoginBanned");
+        return common::fail_h(101, "LoginBanned", &headers);
     }
     if !need_captcha {
-        return common::fail(101, "NoCaptchaRequired");
+        return common::fail_h(101, "NoCaptchaRequired", &headers);
     }
     match state.login_limiter.require_captcha() {
         Some((id, _answer, b64)) => common::success(json!({
             "captcha": { "id": id, "b64": b64 },
         })),
-        None => common::fail(101, "CaptchaError"),
+        None => common::fail_h(101, "CaptchaError", &headers),
     }
 }
 
@@ -704,17 +704,17 @@ pub async fn handle_register(
 ) -> Json<Value> {
     let config = state.config_manager.get().await;
     if !config.app.register {
-        return common::fail(101, "RegisterClosed");
+        return common::fail_h(101, "RegisterClosed", &headers);
     }
     let username = body.get("username").and_then(|v| v.as_str()).unwrap_or("");
     let email = body.get("email").and_then(|v| v.as_str()).unwrap_or("");
     let password = body.get("password").and_then(|v| v.as_str()).unwrap_or("");
     if username.is_empty() || password.len() < 4 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     // 用户名已存在
     if user_by_username(&state.db, username).is_some() {
-        return common::fail(101, "OperationFailed");
+        return common::fail_h(101, "OperationFailed", &headers);
     }
     let hash = crate::utils::hash_password(password);
     let status = if config.app.register_status == 2 {
@@ -729,12 +729,12 @@ pub async fn handle_register(
         rusqlite::params![username, email, hash, username, status],
     );
     if res.is_err() {
-        return common::fail(101, "OperationFailed");
+        return common::fail_h(101, "OperationFailed", &headers);
     }
     let uid = conn.last_insert_rowid();
     let user = user_by_id(&state.db, uid).unwrap_or_default();
     if status == 2 {
-        return common::fail(101, "RegisterSuccessWaitAdminConfirm");
+        return common::fail_h(101, "RegisterSuccessWaitAdminConfirm", &headers);
     }
     let reg_ip = crate::utils::client_ip(&headers, "127.0.0.1");
     let token = do_login(
@@ -815,7 +815,7 @@ pub async fn handle_change_cur_pwd(
     let (user, _) = match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs)
     {
         Ok(v) => v,
-        Err((code, msg)) => return common::fail(code, msg),
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
     };
     let old = body
         .get("old_password")
@@ -829,7 +829,7 @@ pub async fn handle_change_cur_pwd(
     if !user.password.is_empty() {
         let (ok, _) = crate::utils::verify_password(&user.password, old);
         if !ok {
-            return common::fail(101, "OldPasswordError");
+            return common::fail_h(101, "OldPasswordError", &headers);
         }
     }
     let hash = crate::utils::hash_password(new);
@@ -849,13 +849,13 @@ pub async fn handle_my_oauth(State(state): State<AdminState>, headers: HeaderMap
     let (user, _) = match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs)
     {
         Ok(v) => v,
-        Err((code, msg)) => return common::fail(code, msg),
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
     };
     let ops = crate::api::oauth::oauth_provider_ops(&state);
     let conn = state.db.conn();
     let mut stmt = match conn.prepare("SELECT op FROM user_thirds WHERE user_id = ?1") {
         Ok(s) => s,
-        Err(_) => return common::fail(101, "OperationFailed"),
+        Err(_) => return common::fail_h(101, "OperationFailed", &headers),
     };
     let bound: Vec<String> = stmt
         .query_map([user.id], |r| r.get(0))
@@ -881,7 +881,7 @@ pub async fn handle_group_users(
     let config = state.config_manager.get().await;
     let (_, _) = match auth::backend_user_auth(&state.db, &headers, config.app.token_expire_secs) {
         Ok(v) => v,
-        Err((code, msg)) => return common::fail(code, msg),
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
     };
     let groups = crate::api::crud::list_groups_json(&state);
     let users = crate::api::crud::list_all_users_json(&state);

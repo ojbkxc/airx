@@ -61,8 +61,8 @@ async fn auth_admin(state: &AdminState, headers: &HeaderMap) -> Result<User, (i6
     Ok(user)
 }
 
-fn auth_err(e: (i64, &'static str)) -> Json<Value> {
-    common::fail(e.0, e.1)
+fn auth_err(e: (i64, &'static str), headers: &HeaderMap) -> Json<Value> {
+    common::fail_h(e.0, e.1, headers)
 }
 
 /// 当前时间 SQL 字符串（对齐 GORM 写入的 RFC3339 长格式；查询端统一截前 19 位比较）
@@ -111,7 +111,7 @@ pub async fn handle_user_list(
 ) -> Json<Value> {
     let user = match auth_admin(&state, &headers).await {
         Ok(u) => u,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let _ = user;
     let (page, size) = page_args(&PageQuery {
@@ -159,12 +159,12 @@ pub async fn handle_user_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let iid: i64 = id.parse().unwrap_or(0);
     match crate::api::admin::user_by_id(&state.db, iid) {
         Some(u) if u.id > 0 => common::success(serde_json::to_value(&u).unwrap_or(Value::Null)),
-        _ => common::fail(101, "ItemNotFound"),
+        _ => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -175,12 +175,12 @@ pub async fn handle_user_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let username = b.get("username").and_then(|v| v.as_str()).unwrap_or("");
     let group_id = b.get("group_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if username.len() < 2 || username.len() > 32 || group_id == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     // IsUsernameExists → "UsernameExists"（拼接为 OperationFailed+err）
     let conn = state.db.conn();
@@ -198,7 +198,7 @@ pub async fn handle_user_create(
     let is_admin = b.get("is_admin").and_then(|v| v.as_bool()).unwrap_or(false);
     let status = b.get("status").and_then(|v| v.as_i64()).unwrap_or(0);
     if status < 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let email = b.get("email").and_then(|v| v.as_str()).unwrap_or("");
     let nickname = b.get("nickname").and_then(|v| v.as_str()).unwrap_or("");
@@ -225,13 +225,13 @@ pub async fn handle_user_update(
 ) -> Json<Value> {
     let cur = match auth_admin(&state, &headers).await {
         Ok(u) => u,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let uid = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let username = b.get("username").and_then(|v| v.as_str()).unwrap_or("");
     let group_id = b.get("group_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if uid == 0 || username.len() < 2 || username.len() > 32 || group_id == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let existing = match conn.query_row(
@@ -242,7 +242,7 @@ pub async fn handle_user_update(
         Ok(u) => u,
         Err(_) => {
             drop(conn);
-            return common::fail(101, "ItemNotFound");
+            return common::fail_h(101, "ItemNotFound", &headers);
         }
     };
     drop(conn);
@@ -296,11 +296,11 @@ pub async fn handle_user_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let uid = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if uid <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let existing = match conn.query_row(
@@ -311,7 +311,7 @@ pub async fn handle_user_delete(
         Ok(u) => u,
         Err(_) => {
             drop(conn);
-            return common::fail(101, "ItemNotFound");
+            return common::fail_h(101, "ItemNotFound", &headers);
         }
     };
     if existing.is_admin() {
@@ -357,12 +357,12 @@ pub async fn handle_user_change_pwd(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let uid = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let password = b.get("password").and_then(|v| v.as_str()).unwrap_or("");
     if uid == 0 || password.len() < 4 || password.len() > 32 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -372,7 +372,7 @@ pub async fn handle_user_change_pwd(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let hash = crate::utils::hash_password(password);
     let _ = conn.execute(
@@ -438,7 +438,7 @@ pub async fn handle_group_list(
     Query(q): Query<PageQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let (page, size) = page_args(&q);
     let conn = state.db.conn();
@@ -470,7 +470,7 @@ pub async fn handle_group_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let iid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -480,7 +480,7 @@ pub async fn handle_group_detail(
     drop(conn);
     match g {
         Some(g) if g.id > 0 => common::success(serde_json::to_value(&g).unwrap_or(Value::Null)),
-        _ => common::fail(101, "ItemNotFound"),
+        _ => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -491,11 +491,11 @@ pub async fn handle_group_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let type_ = b.get("type").and_then(|v| v.as_i64()).unwrap_or(1);
     let conn = state.db.conn();
@@ -517,12 +517,12 @@ pub async fn handle_group_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if id == 0 || name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -532,7 +532,7 @@ pub async fn handle_group_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let type_ = b.get("type").and_then(|v| v.as_i64()).unwrap_or(0);
     if type_ != 0 {
@@ -557,11 +557,11 @@ pub async fn handle_group_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -571,7 +571,7 @@ pub async fn handle_group_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute("DELETE FROM groups WHERE id = ?1", [id]);
     drop(conn);
@@ -597,7 +597,7 @@ pub async fn handle_device_group_list(
     Query(q): Query<PageQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let (page, size) = page_args(&q);
     let conn = state.db.conn();
@@ -629,7 +629,7 @@ pub async fn handle_device_group_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let iid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -643,7 +643,7 @@ pub async fn handle_device_group_detail(
     drop(conn);
     match g {
         Some(g) if g.id > 0 => common::success(serde_json::to_value(&g).unwrap_or(Value::Null)),
-        _ => common::fail(101, "ItemNotFound"),
+        _ => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -654,11 +654,11 @@ pub async fn handle_device_group_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let res = conn.execute(
@@ -679,12 +679,12 @@ pub async fn handle_device_group_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if id == 0 || name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -696,7 +696,7 @@ pub async fn handle_device_group_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let _ = conn.execute(
         "UPDATE device_groups SET name=?1, updated_at=?2 WHERE id=?3",
@@ -713,11 +713,11 @@ pub async fn handle_device_group_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -729,7 +729,7 @@ pub async fn handle_device_group_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute("DELETE FROM device_groups WHERE id = ?1", [id]);
     drop(conn);
@@ -832,7 +832,7 @@ pub async fn handle_tag_list(
     Query(q): Query<TagQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let (page, size) = page_args(&PageQuery {
         page: q.page,
@@ -889,7 +889,7 @@ pub async fn handle_tag_detail(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(u) => u,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let iid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -900,12 +900,12 @@ pub async fn handle_tag_detail(
     match t {
         Some(t) if t.id > 0 => {
             if !user.is_admin() && t.user_id != user.id {
-                return common::fail(101, "NoAccess");
+                return common::fail_h(101, "NoAccess", &headers);
             }
             load_collection_cache(&state.db.conn(), &[t.collection_id]);
             common::success(tag_json(&t))
         }
-        _ => common::fail(101, "ItemNotFound"),
+        _ => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -916,17 +916,17 @@ pub async fn handle_tag_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let color = b.get("color").and_then(|v| v.as_i64()).unwrap_or(0);
     let user_id = b.get("user_id").and_then(|v| v.as_i64()).unwrap_or(0);
     let collection_id = b.get("collection_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     if user_id == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let res = conn.execute(
@@ -947,12 +947,12 @@ pub async fn handle_tag_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if id == 0 || name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -962,7 +962,7 @@ pub async fn handle_tag_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let _ = conn.execute(
         "UPDATE tags SET name=?1, user_id=?2, color=?3, collection_id=?4, updated_at=?5 WHERE id=?6",
@@ -986,11 +986,11 @@ pub async fn handle_tag_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -1000,7 +1000,7 @@ pub async fn handle_tag_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute("DELETE FROM tags WHERE id = ?1", [id]);
     drop(conn);
@@ -1225,7 +1225,7 @@ pub async fn handle_login_log_list(
     Query(q): Query<LoginLogQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let (page, size) = page_args(&PageQuery {
         page: q.page,
@@ -1263,11 +1263,11 @@ pub async fn handle_login_log_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -1277,7 +1277,7 @@ pub async fn handle_login_log_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute("DELETE FROM login_logs WHERE id = ?1", [id]);
     drop(conn);
@@ -1294,7 +1294,7 @@ pub async fn handle_login_log_batch_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let ids: Vec<i64> = b
         .get("ids")
@@ -1302,7 +1302,7 @@ pub async fn handle_login_log_batch_delete(
         .map(|a| a.iter().filter_map(|x| x.as_i64()).collect())
         .unwrap_or_default();
     if ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
@@ -1437,7 +1437,7 @@ pub async fn handle_audit_conn_list(
     Query(q): Query<AuditQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     audit_list(&state, &q, "audit_conns", audit_conn_json)
 }
@@ -1449,19 +1449,25 @@ pub async fn handle_audit_file_list(
     Query(q): Query<AuditQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     audit_list(&state, &q, "audit_files", audit_file_json)
 }
 
 /// 通用单条/批量删除
-fn delete_by_ids(state: &AdminState, b: &Value, table: &str, single_key: &str) -> Json<Value> {
+fn delete_by_ids(
+    state: &AdminState,
+    headers: &axum::http::HeaderMap,
+    b: &Value,
+    table: &str,
+    single_key: &str,
+) -> Json<Value> {
     let conn = state.db.conn();
     if let Some(id) = b.get(single_key).and_then(|v| v.as_i64()) {
         // 单条
         if id <= 0 {
             drop(conn);
-            return common::fail(101, "ParamsError");
+            return common::fail_h(101, "ParamsError", headers);
         }
         let exists: i64 = conn
             .query_row(
@@ -1472,7 +1478,7 @@ fn delete_by_ids(state: &AdminState, b: &Value, table: &str, single_key: &str) -
             .unwrap_or(0);
         if exists == 0 {
             drop(conn);
-            return common::fail(101, "ItemNotFound");
+            return common::fail_h(101, "ItemNotFound", headers);
         }
         let res = conn.execute(&format!("DELETE FROM {} WHERE id = ?1", table), [id]);
         drop(conn);
@@ -1482,17 +1488,22 @@ fn delete_by_ids(state: &AdminState, b: &Value, table: &str, single_key: &str) -
         return common::success(Value::Null);
     }
     drop(conn);
-    common::fail(101, "ParamsError")
+    common::fail_h(101, "ParamsError", headers)
 }
 
-fn batch_delete_ids(state: &AdminState, b: &Value, table: &str) -> Json<Value> {
+fn batch_delete_ids(
+    state: &AdminState,
+    headers: &axum::http::HeaderMap,
+    b: &Value,
+    table: &str,
+) -> Json<Value> {
     let ids: Vec<i64> = b
         .get("ids")
         .and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|x| x.as_i64()).collect())
         .unwrap_or_default();
     if ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let conn = state.db.conn();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
@@ -1515,9 +1526,9 @@ pub async fn handle_audit_conn_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    delete_by_ids(&state, &b, "audit_conns", "id")
+    delete_by_ids(&state, &headers, &b, "audit_conns", "id")
 }
 
 /// POST /api/admin/audit_conn/batchDelete
@@ -1527,9 +1538,9 @@ pub async fn handle_audit_conn_batch_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    batch_delete_ids(&state, &b, "audit_conns")
+    batch_delete_ids(&state, &headers, &b, "audit_conns")
 }
 
 /// POST /api/admin/audit_file/delete
@@ -1539,9 +1550,9 @@ pub async fn handle_audit_file_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    delete_by_ids(&state, &b, "audit_files", "id")
+    delete_by_ids(&state, &headers, &b, "audit_files", "id")
 }
 
 /// POST /api/admin/audit_file/batchDelete
@@ -1551,9 +1562,9 @@ pub async fn handle_audit_file_batch_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    batch_delete_ids(&state, &b, "audit_files")
+    batch_delete_ids(&state, &headers, &b, "audit_files")
 }
 
 // ─────────────────────────── address_book_collection / rule ───────────────────────────
@@ -1649,7 +1660,7 @@ pub async fn handle_abc_list(
     Query(q): Query<AbcQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     abc_list(&state, &q, None)
 }
@@ -1661,7 +1672,7 @@ pub async fn handle_abc_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let iid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -1675,7 +1686,7 @@ pub async fn handle_abc_detail(
     drop(conn);
     match c {
         Some(c) if c.id > 0 => common::success(serde_json::to_value(&c).unwrap_or(Value::Null)),
-        _ => common::fail(101, "ItemNotFound"),
+        _ => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -1686,12 +1697,12 @@ pub async fn handle_abc_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let user_id = b.get("user_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if name.is_empty() || user_id == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let res = conn.execute(
@@ -1712,12 +1723,12 @@ pub async fn handle_abc_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if id == 0 || name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -1729,7 +1740,7 @@ pub async fn handle_abc_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let _ = conn.execute(
         "UPDATE address_book_collections SET name=?1, updated_at=?2 WHERE id=?3",
@@ -1746,11 +1757,11 @@ pub async fn handle_abc_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -1762,7 +1773,7 @@ pub async fn handle_abc_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let _ = conn.execute_batch("BEGIN");
     let _ = conn.execute(
@@ -1783,7 +1794,7 @@ pub async fn handle_abcr_list(
     Query(q): Query<AbcrQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let (page, size) = page_args(&PageQuery {
         page: q.page,
@@ -1831,7 +1842,7 @@ pub async fn handle_abcr_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let iid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -1845,7 +1856,7 @@ pub async fn handle_abcr_detail(
     drop(conn);
     match r {
         Some(r) if r.id > 0 => common::success(abcr_json(&r)),
-        _ => common::fail(101, "ItemNotFound"),
+        _ => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -1922,22 +1933,22 @@ pub async fn handle_abcr_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let t = match parse_abcr(&b) {
         Some(t) => t,
-        None => return common::fail(101, "ParamsError"),
+        None => return common::fail_h(101, "ParamsError", &headers),
     };
     if t.type_ != 1 && t.type_ != 2 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     if t.rule < 1 || t.rule > 3 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     if let Err(msg) = abcr_check_form(&conn, &t) {
         drop(conn);
-        return common::fail(101, msg);
+        return common::fail_h(101, msg, &headers);
     }
     let res = conn.execute(
         "INSERT INTO address_book_collection_rules (user_id, collection_id, rule, type, to_id, created_at, updated_at)
@@ -1958,17 +1969,17 @@ pub async fn handle_abcr_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let t = match parse_abcr(&b) {
         Some(t) => t,
-        None => return common::fail(101, "ParamsError"),
+        None => return common::fail_h(101, "ParamsError", &headers),
     };
     if t.id == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     if t.rule < 1 || t.rule > 3 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -1980,11 +1991,11 @@ pub async fn handle_abcr_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     if let Err(msg) = abcr_check_form(&conn, &t) {
         drop(conn);
-        return common::fail(101, msg);
+        return common::fail_h(101, msg, &headers);
     }
     // Updates 非零字段
     let _ = conn.execute(
@@ -2002,11 +2013,11 @@ pub async fn handle_abcr_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -2018,7 +2029,7 @@ pub async fn handle_abcr_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute(
         "DELETE FROM address_book_collection_rules WHERE id = ?1",
@@ -2063,7 +2074,7 @@ pub async fn handle_user_token_list(
     Query(q): Query<UserTokenQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let (page, size) = page_args(&PageQuery {
         page: q.page,
@@ -2102,11 +2113,11 @@ pub async fn handle_user_token_delete(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(u) => u,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     if id <= 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let owner: i64 = conn
@@ -2116,11 +2127,11 @@ pub async fn handle_user_token_delete(
         .unwrap_or(0);
     if owner == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     if !user.is_admin() && owner != user.id {
         drop(conn);
-        return common::fail(101, "NoAccess");
+        return common::fail_h(101, "NoAccess", &headers);
     }
     let res = conn.execute("DELETE FROM user_tokens WHERE id = ?1", [id]);
     drop(conn);
@@ -2137,9 +2148,9 @@ pub async fn handle_user_token_batch_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    batch_delete_ids(&state, &b, "user_tokens")
+    batch_delete_ids(&state, &headers, &b, "user_tokens")
 }
 
 fn row_to_share_record(row: &rusqlite::Row) -> rusqlite::Result<crate::models::ShareRecord> {
@@ -2207,7 +2218,7 @@ pub async fn handle_share_record_list(
     Query(q): Query<ShareRecordQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     share_record_list(&state, &q, None)
 }
@@ -2219,9 +2230,9 @@ pub async fn handle_share_record_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    delete_by_ids(&state, &b, "share_records", "id")
+    delete_by_ids(&state, &headers, &b, "share_records", "id")
 }
 
 /// POST /api/admin/share_record/batchDelete
@@ -2231,9 +2242,9 @@ pub async fn handle_share_record_batch_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    batch_delete_ids(&state, &b, "share_records")
+    batch_delete_ids(&state, &headers, &b, "share_records")
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2367,7 +2378,7 @@ pub async fn handle_oauth_list(
     Query(q): Query<PageQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let (page, size) = page_args(&q);
     let conn = state.db.conn();
@@ -2400,7 +2411,7 @@ pub async fn handle_oauth_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let iid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -2411,7 +2422,7 @@ pub async fn handle_oauth_detail(
         }
         None => {
             drop(conn);
-            common::fail(400, "ItemNotFound")
+            common::fail_h(400, "ItemNotFound", &headers)
         }
     }
 }
@@ -2423,17 +2434,17 @@ pub async fn handle_oauth_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let o = match parse_oauth_body(&b) {
         Ok(o) => o,
-        Err((code, msg)) => return common::fail(code, msg),
+        Err((code, msg)) => return common::fail_h(code, msg, &headers),
     };
     let now = now_sql();
     let conn = state.db.conn();
     if oauth_by_op(&conn, &o.op).is_some() {
         drop(conn);
-        return common::fail(400, "ItemExists");
+        return common::fail_h(400, "ItemExists", &headers);
     }
     let res = conn.execute(
         "INSERT INTO oauths (op, oauth_type, client_id, client_secret, auto_register, scopes, issuer, pkce_enable, pkce_method, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?10)",
@@ -2446,12 +2457,12 @@ pub async fn handle_oauth_create(
             drop(conn);
             match o2 {
                 Some(x) => common::success(oauth_json(x)),
-                None => common::fail(400, "OperationFailed"),
+                None => common::fail_h(400, "OperationFailed", &headers),
             }
         }
         Err(_) => {
             drop(conn);
-            common::fail(400, "OperationFailed")
+            common::fail_h(400, "OperationFailed", &headers)
         }
     }
 }
@@ -2463,7 +2474,7 @@ pub async fn handle_oauth_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let conn = state.db.conn();
@@ -2471,14 +2482,14 @@ pub async fn handle_oauth_update(
         Some(o) => o,
         None => {
             drop(conn);
-            return common::fail(400, "ItemNotFound");
+            return common::fail_h(400, "ItemNotFound", &headers);
         }
     };
     let o = match parse_oauth_body(&b) {
         Ok(o) => o,
         Err((code, msg)) => {
             drop(conn);
-            return common::fail(code, msg);
+            return common::fail_h(code, msg, &headers);
         }
     };
     // op 与其他记录冲突检查
@@ -2486,7 +2497,7 @@ pub async fn handle_oauth_update(
         if let Some(ex) = oauth_by_op(&conn, &o.op) {
             if ex.id != id {
                 drop(conn);
-                return common::fail(400, "ItemExists");
+                return common::fail_h(400, "ItemExists", &headers);
             }
         }
     }
@@ -2498,7 +2509,7 @@ pub async fn handle_oauth_update(
     drop(conn);
     match res {
         Ok(_) => common::success(json!({})),
-        Err(_) => common::fail(400, "OperationFailed"),
+        Err(_) => common::fail_h(400, "OperationFailed", &headers),
     }
 }
 
@@ -2509,9 +2520,9 @@ pub async fn handle_oauth_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    delete_by_ids(&state, &b, "oauths", "id")
+    delete_by_ids(&state, &headers, &b, "oauths", "id")
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2619,7 +2630,7 @@ pub async fn handle_rustdesk_cmd_list(
     Query(q): Query<PageQuery>,
 ) -> Json<Value> {
     if auth_user(&state, &headers).await.is_err() {
-        return common::fail(403, "NeedLogin");
+        return common::fail_h(403, "NeedLogin", &headers);
     }
     let (page, size) = page_args(&q);
     let conn = state.db.conn();
@@ -2651,7 +2662,7 @@ pub async fn handle_rustdesk_cmd_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_user(&state, &headers).await.is_err() {
-        return common::fail(403, "NeedLogin");
+        return common::fail_h(403, "NeedLogin", &headers);
     }
     let cmd = b
         .get("cmd")
@@ -2700,12 +2711,12 @@ pub async fn handle_rustdesk_cmd_create(
             drop(conn);
             match c {
                 Ok(c) => common::success(server_cmd_json(c)),
-                Err(_) => common::fail(400, "OperationFailed"),
+                Err(_) => common::fail_h(400, "OperationFailed", &headers),
             }
         }
         Err(_) => {
             drop(conn);
-            common::fail(400, "OperationFailed")
+            common::fail_h(400, "OperationFailed", &headers)
         }
     }
 }
@@ -2717,9 +2728,9 @@ pub async fn handle_rustdesk_cmd_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_user(&state, &headers).await.is_err() {
-        return common::fail(403, "NeedLogin");
+        return common::fail_h(403, "NeedLogin", &headers);
     }
-    delete_by_ids(&state, &b, "server_cmds", "id")
+    delete_by_ids(&state, &headers, &b, "server_cmds", "id")
 }
 
 /// POST /api/admin/rustdesk/sendCmd —— TCP 发到 hbbs(21115→id_port-1)/hbbr(21117→relay_port)
@@ -2729,7 +2740,7 @@ pub async fn handle_rustdesk_send_cmd(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_user(&state, &headers).await.is_err() {
-        return common::fail(403, "NeedLogin");
+        return common::fail_h(403, "NeedLogin", &headers);
     }
     let cmd = b
         .get("cmd")
@@ -2825,7 +2836,7 @@ pub async fn handle_dashboard_stats(
     headers: HeaderMap,
 ) -> Json<Value> {
     if auth_user(&state, &headers).await.is_err() {
-        return common::fail(403, "NeedLogin");
+        return common::fail_h(403, "NeedLogin", &headers);
     }
     let conn = state.db.conn();
     let now = chrono::Utc::now();
@@ -2893,7 +2904,7 @@ pub async fn handle_dashboard_stats(
     let mut stmt = match conn.prepare("SELECT os FROM peers") {
         Ok(s) => s,
         Err(_) => {
-            return common::fail(400, "OperationFailed");
+            return common::fail_h(400, "OperationFailed", &headers);
         }
     };
     let mut dist: std::collections::HashMap<&'static str, i64> = std::collections::HashMap::new();
@@ -2930,7 +2941,7 @@ pub async fn handle_dashboard_stats(
     ) {
         Ok(s) => s,
         Err(_) => {
-            return common::fail(400, "OperationFailed");
+            return common::fail_h(400, "OperationFailed", &headers);
         }
     };
     let recent_peers: Vec<Value> = stmt
@@ -2952,7 +2963,7 @@ pub async fn handle_dashboard_stats(
     ) {
         Ok(s) => s,
         Err(_) => {
-            return common::fail(400, "OperationFailed");
+            return common::fail_h(400, "OperationFailed", &headers);
         }
     };
     let recent_conns: Vec<Value> = stmt
@@ -3139,7 +3150,7 @@ pub async fn handle_peer_list(
     Query(q): Query<PeerQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     peer_list(&state, &q, None)
 }
@@ -3151,7 +3162,7 @@ pub async fn handle_peer_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let iid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -3165,7 +3176,7 @@ pub async fn handle_peer_detail(
     drop(conn);
     match row {
         Some(p) => common::success(peer_json(&p)),
-        None => common::fail(101, "ItemNotFound"),
+        None => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -3176,7 +3187,7 @@ pub async fn handle_peer_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let pid = b
         .get("id")
@@ -3184,7 +3195,7 @@ pub async fn handle_peer_create(
         .unwrap_or("")
         .to_string();
     if pid.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -3194,7 +3205,7 @@ pub async fn handle_peer_create(
         .unwrap_or(0);
     if exists > 0 {
         drop(conn);
-        return common::fail(101, "ItemExists");
+        return common::fail_h(101, "ItemExists", &headers);
     }
     let now = now_sql();
     let res = conn.execute(
@@ -3230,7 +3241,7 @@ pub async fn handle_peer_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let rid = b
         .get("row_id")
@@ -3242,7 +3253,7 @@ pub async fn handle_peer_update(
         })
         .unwrap_or(0);
     if rid == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -3252,7 +3263,7 @@ pub async fn handle_peer_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let mut sets: Vec<String> = vec![];
     let mut params: Vec<Box<dyn rusqlite::ToSql>> = vec![];
@@ -3364,7 +3375,7 @@ pub async fn handle_peer_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let rid = b
         .get("row_id")
@@ -3372,7 +3383,7 @@ pub async fn handle_peer_delete(
         .or_else(|| b.get("id").and_then(|v| v.as_i64()))
         .unwrap_or(0);
     if rid == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let uuid: Option<String> = conn
@@ -3387,7 +3398,7 @@ pub async fn handle_peer_delete(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let res = conn.execute("DELETE FROM peers WHERE row_id = ?1", [rid]);
     if res.is_ok() {
@@ -3409,7 +3420,7 @@ pub async fn handle_peer_batch_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let ids: Vec<i64> = b
         .get("ids")
@@ -3417,7 +3428,7 @@ pub async fn handle_peer_batch_delete(
         .map(|a| a.iter().filter_map(|x| x.as_i64()).collect())
         .unwrap_or_default();
     if ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
@@ -3455,7 +3466,7 @@ pub async fn handle_peer_simple_data(
     Query(q): Query<PeerQuery>,
 ) -> Json<Value> {
     if auth_user(&state, &headers).await.is_err() {
-        return common::fail(403, "NeedLogin");
+        return common::fail_h(403, "NeedLogin", &headers);
     }
     let (page, size) = page_args(&PageQuery {
         page: q.page,
@@ -3490,7 +3501,7 @@ pub async fn handle_address_book_list(
     Query(q): Query<AddressBookQuery>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     ab_list(&state, &q, None)
 }
@@ -3511,7 +3522,7 @@ pub async fn handle_address_book_detail(
     Path(id): Path<String>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let rid: i64 = id.parse().unwrap_or(0);
     let conn = state.db.conn();
@@ -3522,7 +3533,7 @@ pub async fn handle_address_book_detail(
             load_collection_cache(&state.db.conn(), &[ab.collection_id]);
             common::success(ab_json(&ab))
         }
-        None => common::fail(101, "ItemNotFound"),
+        None => common::fail_h(101, "ItemNotFound", &headers),
     }
 }
 
@@ -3618,17 +3629,17 @@ pub async fn handle_address_book_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let ab = match parse_address_book_body(&b, true) {
         Ok(x) => x,
-        Err((c, m)) => return common::fail(c, m),
+        Err((c, m)) => return common::fail_h(c, m, &headers),
     };
     // collection owner 校验（cid>0 时）
     let conn = state.db.conn();
     if ab.collection_id > 0 && !check_collection_owner(&conn, ab.user_id, ab.collection_id) {
         drop(conn);
-        return common::fail(101, "CollectionNotFound");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let exists: i64 = conn
         .query_row(
@@ -3639,7 +3650,7 @@ pub async fn handle_address_book_create(
         .unwrap_or(0);
     if exists > 0 {
         drop(conn);
-        return common::fail(101, "ItemExists");
+        return common::fail_h(101, "ItemExists", &headers);
     }
     let now = now_sql();
     let res = conn.execute(
@@ -3665,15 +3676,15 @@ pub async fn handle_address_book_update(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let rid = b.get("row_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if rid == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let ab = match parse_address_book_body(&b, true) {
         Ok(x) => x,
-        Err((c, m)) => return common::fail(c, m),
+        Err((c, m)) => return common::fail_h(c, m, &headers),
     };
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -3685,11 +3696,11 @@ pub async fn handle_address_book_update(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     if ab.collection_id > 0 && !check_collection_owner(&conn, ab.user_id, ab.collection_id) {
         drop(conn);
-        return common::fail(101, "CollectionNotFound");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let now = now_sql();
     let res = conn.execute(
@@ -3715,13 +3726,13 @@ pub async fn handle_address_book_delete(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
-    delete_by_ids_ab(&state, &b)
+    delete_by_ids_ab(&state, &headers, &b)
 }
 
 /// address_book 的单删（主键 row_id；body 传 id=数字字符串或 row_id）
-fn delete_by_ids_ab(state: &AdminState, b: &Value) -> Json<Value> {
+fn delete_by_ids_ab(state: &AdminState, headers: &axum::http::HeaderMap, b: &Value) -> Json<Value> {
     let rid = b
         .get("row_id")
         .and_then(|v| v.as_i64())
@@ -3734,7 +3745,7 @@ fn delete_by_ids_ab(state: &AdminState, b: &Value) -> Json<Value> {
         })
         .unwrap_or(0);
     if rid == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let conn = state.db.conn();
     let exists: i64 = conn
@@ -3746,7 +3757,7 @@ fn delete_by_ids_ab(state: &AdminState, b: &Value) -> Json<Value> {
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", headers);
     }
     let res = conn.execute("DELETE FROM address_books WHERE row_id = ?1", [rid]);
     drop(conn);
@@ -3763,7 +3774,7 @@ pub async fn handle_address_book_batch_create(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let user_ids: Vec<i64> = b
         .get("user_ids")
@@ -3771,7 +3782,7 @@ pub async fn handle_address_book_batch_create(
         .map(|a| a.iter().filter_map(|x| x.as_i64()).collect())
         .unwrap_or_default();
     if user_ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let abs: Vec<Value> = b
         .get("address_books")
@@ -3844,7 +3855,7 @@ pub async fn handle_address_book_batch_create_from_peers(
     Json(b): Json<Value>,
 ) -> Json<Value> {
     if auth_admin(&state, &headers).await.is_err() {
-        return common::fail(403, "NoAccess");
+        return common::fail_h(403, "NoAccess", &headers);
     }
     let user_ids: Vec<i64> = b
         .get("user_ids")
@@ -3861,7 +3872,7 @@ pub async fn handle_address_book_batch_create_from_peers(
         })
         .unwrap_or_default();
     if user_ids.is_empty() || peer_ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     let conn = state.db.conn();
     let now = now_sql();
@@ -3904,7 +3915,7 @@ pub async fn handle_address_book_share_by_webclient(
 ) -> Json<Value> {
     let (user, _) = match auth_user(&state, &headers).await {
         Ok(x) => x,
-        Err(e) => return auth_err(e),
+        Err(e) => return auth_err(e, &headers),
     };
     let id = b
         .get("id")
@@ -3923,13 +3934,13 @@ pub async fn handle_address_book_share_by_webclient(
         .to_string();
     let expire = b.get("expire").and_then(|v| v.as_i64()).unwrap_or(0);
     if id.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     if password_type != "once" && password_type != "fixed" {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     if password.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", &headers);
     }
     // 目标 address_book 必须存在且属于当前用户
     let conn = state.db.conn();
@@ -3942,7 +3953,7 @@ pub async fn handle_address_book_share_by_webclient(
         .unwrap_or(0);
     if exists == 0 {
         drop(conn);
-        return common::fail(101, "ItemNotFound");
+        return common::fail_h(101, "ItemNotFound", &headers);
     }
     let token = uuid::Uuid::new_v4().to_string();
     let now = now_sql();
@@ -4036,13 +4047,17 @@ pub fn tag_list(state: &AdminState, q: &TagQuery, force_user_id: Option<i64>) ->
 }
 
 /// tag create body 版（body.user_id 已由调用方强制）
-pub fn tag_create_body(state: &AdminState, b: &Value) -> Json<Value> {
+pub fn tag_create_body(
+    state: &AdminState,
+    headers: &axum::http::HeaderMap,
+    b: &Value,
+) -> Json<Value> {
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let color = b.get("color").and_then(|v| v.as_i64()).unwrap_or(0);
     let user_id = b.get("user_id").and_then(|v| v.as_i64()).unwrap_or(0);
     let collection_id = b.get("collection_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if name.is_empty() || user_id == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let conn = state.db.conn();
     let res = conn.execute(
@@ -4057,11 +4072,16 @@ pub fn tag_create_body(state: &AdminState, b: &Value) -> Json<Value> {
 }
 
 /// tag update body 版（force_user_id 时仅能改自己的）
-pub fn tag_update_body(state: &AdminState, b: &Value, force_user_id: Option<i64>) -> Json<Value> {
+pub fn tag_update_body(
+    state: &AdminState,
+    headers: &axum::http::HeaderMap,
+    b: &Value,
+    force_user_id: Option<i64>,
+) -> Json<Value> {
     let id = b.get("id").and_then(|v| v.as_i64()).unwrap_or(0);
     let name = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
     if id == 0 || name.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let conn = state.db.conn();
     if let Some(uid) = force_user_id {
@@ -4074,7 +4094,7 @@ pub fn tag_update_body(state: &AdminState, b: &Value, force_user_id: Option<i64>
             .unwrap_or(0);
         if exists == 0 {
             drop(conn);
-            return common::fail(101, "ItemNotFound");
+            return common::fail_h(101, "ItemNotFound", headers);
         }
     }
     let _ = conn.execute(
@@ -4093,15 +4113,19 @@ pub fn tag_update_body(state: &AdminState, b: &Value, force_user_id: Option<i64>
 }
 
 /// address_book create body 版
-pub fn address_book_create_body(state: &AdminState, b: &Value) -> Json<Value> {
+pub fn address_book_create_body(
+    state: &AdminState,
+    headers: &axum::http::HeaderMap,
+    b: &Value,
+) -> Json<Value> {
     let ab = match parse_address_book_body(b, true) {
         Ok(x) => x,
-        Err((c, m)) => return common::fail(c, m),
+        Err((c, m)) => return common::fail_h(c, m, headers),
     };
     let conn = state.db.conn();
     if ab.collection_id > 0 && !check_collection_owner(&conn, ab.user_id, ab.collection_id) {
         drop(conn);
-        return common::fail(101, "CollectionNotFound");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let exists: i64 = conn
         .query_row(
@@ -4112,7 +4136,7 @@ pub fn address_book_create_body(state: &AdminState, b: &Value) -> Json<Value> {
         .unwrap_or(0);
     if exists > 0 {
         drop(conn);
-        return common::fail(101, "ItemExists");
+        return common::fail_h(101, "ItemExists", headers);
     }
     let now = now_sql();
     let res = conn.execute(
@@ -4134,16 +4158,17 @@ pub fn address_book_create_body(state: &AdminState, b: &Value) -> Json<Value> {
 /// address_book update body 版（force_user_id 时仅能改自己的）
 pub fn address_book_update_body(
     state: &AdminState,
+    headers: &axum::http::HeaderMap,
     b: &Value,
     force_user_id: Option<i64>,
 ) -> Json<Value> {
     let rid = b.get("row_id").and_then(|v| v.as_i64()).unwrap_or(0);
     if rid == 0 {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let ab = match parse_address_book_body(b, true) {
         Ok(x) => x,
-        Err((c, m)) => return common::fail(c, m),
+        Err((c, m)) => return common::fail_h(c, m, headers),
     };
     let conn = state.db.conn();
     if let Some(uid) = force_user_id {
@@ -4156,12 +4181,12 @@ pub fn address_book_update_body(
             .unwrap_or(0);
         if exists == 0 {
             drop(conn);
-            return common::fail(101, "ItemNotFound");
+            return common::fail_h(101, "ItemNotFound", headers);
         }
     }
     if ab.collection_id > 0 && !check_collection_owner(&conn, ab.user_id, ab.collection_id) {
         drop(conn);
-        return common::fail(101, "CollectionNotFound");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let now = now_sql();
     let res = conn.execute(
@@ -4181,7 +4206,11 @@ pub fn address_book_update_body(
 }
 
 /// address_book batchCreateFromPeers body 版
-pub fn address_book_batch_create_from_peers_body(state: &AdminState, b: &Value) -> Json<Value> {
+pub fn address_book_batch_create_from_peers_body(
+    state: &AdminState,
+    headers: &axum::http::HeaderMap,
+    b: &Value,
+) -> Json<Value> {
     let user_ids: Vec<i64> = b
         .get("user_ids")
         .and_then(|v| v.as_array())
@@ -4197,7 +4226,7 @@ pub fn address_book_batch_create_from_peers_body(state: &AdminState, b: &Value) 
         })
         .unwrap_or_default();
     if user_ids.is_empty() || peer_ids.is_empty() {
-        return common::fail(101, "ParamsError");
+        return common::fail_h(101, "ParamsError", headers);
     }
     let conn = state.db.conn();
     let now = now_sql();
@@ -4233,10 +4262,14 @@ pub fn address_book_batch_create_from_peers_body(state: &AdminState, b: &Value) 
 }
 
 /// abcr create body 版（CheckForm 由 parse+abcr_check_form 完成）
-pub fn abcr_create_body(state: &AdminState, b: &Value) -> Json<Value> {
+pub fn abcr_create_body(
+    state: &AdminState,
+    headers: &axum::http::HeaderMap,
+    b: &Value,
+) -> Json<Value> {
     let t = match parse_abcr(b) {
         Some(t) => t,
-        None => return common::fail(101, "ParamsError"),
+        None => return common::fail_h(101, "ParamsError", headers),
     };
     let conn = state.db.conn();
     // owner 校验：collection 必须属于当前用户
@@ -4249,11 +4282,11 @@ pub fn abcr_create_body(state: &AdminState, b: &Value) -> Json<Value> {
         .unwrap_or(0);
     if owner != t.user_id {
         drop(conn);
-        return common::fail(101, "CollectionNotFound");
+        return common::fail_h(101, "ParamsError", headers);
     }
     if let Err(m) = abcr_check_form(&conn, &t) {
         drop(conn);
-        return common::fail(101, m);
+        return common::fail_h(101, m, headers);
     }
     let now = now_sql();
     let res = conn.execute(
