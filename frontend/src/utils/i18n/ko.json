@@ -517,5 +517,104 @@
   },
   "Remark": {
     "One": "비고"
+  },
+  "DeviceGroupManage": {
+    "One": "장치 그룹 관리"
+  },
+  "Devices": {
+    "One": "장치"
+  },
+  "Check your IdP docs, without": {
+    "One": "IdP 문서를 확인하세요, 제외"
+  },
+  "Import": {
+    "One": "가져오기"
+  },
+  "OsDist": {
+    "One": "장치 OS 분포"
+  },
+  "RecentDevices": {
+    "One": "최근 활성 장치"
+  },
+  "ConnTrend7d": {
+    "One": "최근 7일 연결 추이"
+  },
+  "Email": {
+    "One": "이메일"
+  },
+  "View": {
+    "One": "보기"
+  },
+  "ActiveConns": {
+    "One": "진행 중"
+  },
+  "TodayConns": {
+    "One": "오늘 연결"
+  },
+  "OnlineDevices": {
+    "One": "온라인 장치"
+  },
+  "Optional, default is": {
+    "One": "선택 사항, 기본값은"
+  },
+  "TotalDevices": {
+    "One": "전체 장치"
+  },
+  "AddressBookCollection": {
+    "One": "주소록 컬렉션"
+  },
+  "Conns": {
+    "One": "회 연결"
+  },
+  "OfflineDevices": {
+    "One": "오프라인"
+  },
+  "RegisteredUsers": {
+    "One": "등록된 사용자"
+  },
+  "ToggleTheme": {
+    "One": "테마 전환"
+  },
+  "Connecting": {
+    "One": "연결 중"
+  },
+  "NoData": {
+    "One": "데이터 없음"
+  },
+  "Time": {
+    "One": "시간"
+  },
+  "Closed": {
+    "One": "종료됨"
+  },
+  "Online24h": {
+    "One": "24시간 내 활동"
+  },
+  "RecentConns": {
+    "One": "최근 연결"
+  },
+  "For OIDC login without a password, enter any 4-20 letters": {
+    "One": "비밀번호 없이 OIDC로 로그인하려면 임의의 4-20자를 입력하세요"
+  },
+  "Dashboard": {
+    "One": "대시보드"
+  },
+  "or login in with": {
+    "One": "또는 다음으로 로그인"
+  },
+  "Information": {
+    "One": "정보"
+  },
+  "DashboardDesc": {
+    "One": "원격 장치 및 연결 개요"
+  },
+  "Users": {
+    "One": "사용자"
+  },
+  "ChangeLanguage": {
+    "One": "언어 변경"
+  },
+  "Other": {
+    "One": "기타"
   }
 }

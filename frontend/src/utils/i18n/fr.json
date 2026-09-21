@@ -460,9 +460,6 @@
   "UserToken": {
     "One": "Jeton Utilisateur"
   },
-  "Token": {
-    "One": "Jeton"
-  },
   "MyPeer": {
     "One": "Mon appareil"
   },
@@ -534,5 +531,104 @@
   },
   "Remark": {
     "One": "Remarque"
+  },
+  "DeviceGroupManage": {
+    "One": "Gestion des groupes d'appareils"
+  },
+  "Devices": {
+    "One": "Appareils"
+  },
+  "Check your IdP docs, without": {
+    "One": "Consultez la doc de votre IdP, sans"
+  },
+  "Import": {
+    "One": "Importer"
+  },
+  "OsDist": {
+    "One": "Répartition des OS"
+  },
+  "RecentDevices": {
+    "One": "Appareils récemment actifs"
+  },
+  "Email": {
+    "One": "E-mail"
+  },
+  "ConnTrend7d": {
+    "One": "Connexions (7 derniers jours)"
+  },
+  "ActiveConns": {
+    "One": "En cours"
+  },
+  "TodayConns": {
+    "One": "Connexions du jour"
+  },
+  "OnlineDevices": {
+    "One": "Appareils en ligne"
+  },
+  "Optional, default is": {
+    "One": "Facultatif, par défaut"
+  },
+  "TotalDevices": {
+    "One": "Appareils au total"
+  },
+  "AddressBookCollection": {
+    "One": "Collection de carnet d'adresses"
+  },
+  "Conns": {
+    "One": "connexions"
+  },
+  "OfflineDevices": {
+    "One": "Hors ligne"
+  },
+  "RegisteredUsers": {
+    "One": "Utilisateurs enregistrés"
+  },
+  "ToggleTheme": {
+    "One": "Changer le thème"
+  },
+  "Connecting": {
+    "One": "Connexion"
+  },
+  "NoData": {
+    "One": "Aucune donnée"
+  },
+  "Time": {
+    "One": "Heure"
+  },
+  "ShareByWebClient": {
+    "One": "Partager via WebClient"
+  },
+  "Closed": {
+    "One": "Terminé"
+  },
+  "Online24h": {
+    "One": "Actifs sous 24 h"
+  },
+  "RecentConns": {
+    "One": "Connexions récentes"
+  },
+  "For OIDC login without a password, enter any 4-20 letters": {
+    "One": "Pour une connexion OIDC sans mot de passe, saisissez 4 à 20 caractères au choix"
+  },
+  "Dashboard": {
+    "One": "Tableau de bord"
+  },
+  "or login in with": {
+    "One": "ou se connecter avec"
+  },
+  "Information": {
+    "One": "Informations"
+  },
+  "DashboardDesc": {
+    "One": "Vue d'ensemble des appareils et connexions"
+  },
+  "Users": {
+    "One": "Utilisateurs"
+  },
+  "ChangeLanguage": {
+    "One": "Changer la langue"
+  },
+  "Other": {
+    "One": "Autre"
   }
 }

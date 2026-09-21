@@ -531,5 +531,104 @@
   },
   "Remark": {
     "One": "Remark"
+  },
+  "DeviceGroupManage": {
+    "One": "Gestión de grupos de dispositivos"
+  },
+  "Devices": {
+    "One": "Dispositivos"
+  },
+  "Check your IdP docs, without": {
+    "One": "Consulte la documentación de su IdP, sin"
+  },
+  "Import": {
+    "One": "Importar"
+  },
+  "OsDist": {
+    "One": "Distribución de SO"
+  },
+  "RecentDevices": {
+    "One": "Dispositivos recientes"
+  },
+  "ConnTrend7d": {
+    "One": "Conexiones (últimos 7 días)"
+  },
+  "Email": {
+    "One": "Correo electrónico"
+  },
+  "View": {
+    "One": "Ver"
+  },
+  "ActiveConns": {
+    "One": "En curso"
+  },
+  "TodayConns": {
+    "One": "Conexiones de hoy"
+  },
+  "OnlineDevices": {
+    "One": "Dispositivos en línea"
+  },
+  "Optional, default is": {
+    "One": "Opcional, por defecto es"
+  },
+  "TotalDevices": {
+    "One": "Dispositivos totales"
+  },
+  "AddressBookCollection": {
+    "One": "Colección de agenda"
+  },
+  "Conns": {
+    "One": "conexiones"
+  },
+  "OfflineDevices": {
+    "One": "Desconectado"
+  },
+  "RegisteredUsers": {
+    "One": "Usuarios registrados"
+  },
+  "ToggleTheme": {
+    "One": "Cambiar tema"
+  },
+  "Connecting": {
+    "One": "Conectando"
+  },
+  "NoData": {
+    "One": "Sin datos"
+  },
+  "Time": {
+    "One": "Hora"
+  },
+  "Closed": {
+    "One": "Cerrada"
+  },
+  "Online24h": {
+    "One": "Activos en 24 h"
+  },
+  "RecentConns": {
+    "One": "Conexiones recientes"
+  },
+  "For OIDC login without a password, enter any 4-20 letters": {
+    "One": "Para iniciar sesión con OIDC sin contraseña, introduzca de 4 a 20 caracteres"
+  },
+  "Dashboard": {
+    "One": "Panel"
+  },
+  "or login in with": {
+    "One": "o iniciar sesión con"
+  },
+  "Information": {
+    "One": "Información"
+  },
+  "DashboardDesc": {
+    "One": "Resumen de dispositivos y conexiones"
+  },
+  "Users": {
+    "One": "Usuarios"
+  },
+  "ChangeLanguage": {
+    "One": "Cambiar idioma"
+  },
+  "Other": {
+    "One": "Otro"
   }
 }

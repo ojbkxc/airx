@@ -534,6 +534,101 @@
   },
   "Remark": {
     "One": "Примечание"
+  },
+  "Devices": {
+    "One": "Устройства"
+  },
+  "Check your IdP docs, without": {
+    "One": "Проверьте документацию IdP, без"
+  },
+  "Import": {
+    "One": "Импорт"
+  },
+  "OsDist": {
+    "One": "Распределение ОС"
+  },
+  "RecentDevices": {
+    "One": "Недавно активные устройства"
+  },
+  "ConnTrend7d": {
+    "One": "Тренд подключений (7 дней)"
+  },
+  "Email": {
+    "One": "Эл. почта"
+  },
+  "View": {
+    "One": "Просмотр"
+  },
+  "ActiveConns": {
+    "One": "Активно"
+  },
+  "TodayConns": {
+    "One": "Подключения за сегодня"
+  },
+  "OnlineDevices": {
+    "One": "Устройства в сети"
+  },
+  "Optional, default is": {
+    "One": "Необязательно, по умолчанию"
+  },
+  "TotalDevices": {
+    "One": "Всего устройств"
+  },
+  "AddressBookCollection": {
+    "One": "Коллекция адресной книги"
+  },
+  "Conns": {
+    "One": "подключений"
+  },
+  "OfflineDevices": {
+    "One": "Офлайн"
+  },
+  "RegisteredUsers": {
+    "One": "Зарегистрированные пользователи"
+  },
+  "ToggleTheme": {
+    "One": "Сменить тему"
+  },
+  "Connecting": {
+    "One": "Подключается"
+  },
+  "NoData": {
+    "One": "Нет данных"
+  },
+  "Time": {
+    "One": "Время"
+  },
+  "Closed": {
+    "One": "Завершено"
+  },
+  "Online24h": {
+    "One": "Активны за 24 ч"
+  },
+  "RecentConns": {
+    "One": "Недавние подключения"
+  },
+  "For OIDC login without a password, enter any 4-20 letters": {
+    "One": "Для входа по OIDC без пароля введите любые 4-20 символов"
+  },
+  "Dashboard": {
+    "One": "Панель"
+  },
+  "or login in with": {
+    "One": "или войти с помощью"
+  },
+  "Information": {
+    "One": "Информация"
+  },
+  "DashboardDesc": {
+    "One": "Обзор удалённых устройств и подключений"
+  },
+  "Users": {
+    "One": "Пользователи"
+  },
+  "ChangeLanguage": {
+    "One": "Сменить язык"
+  },
+  "Other": {
+    "One": "Другое"
   }
 }
-

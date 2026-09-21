@@ -547,5 +547,74 @@
   },
   "Remark": {
     "One": "備註"
+  },
+  "Devices": {
+    "One": "裝置"
+  },
+  "OsDist": {
+    "One": "裝置系統分布"
+  },
+  "RecentDevices": {
+    "One": "最近活躍裝置"
+  },
+  "ConnTrend7d": {
+    "One": "近 7 日連線趨勢"
+  },
+  "ActiveConns": {
+    "One": "進行中"
+  },
+  "TodayConns": {
+    "One": "今日連線"
+  },
+  "OnlineDevices": {
+    "One": "線上裝置"
+  },
+  "TotalDevices": {
+    "One": "裝置總數"
+  },
+  "Conns": {
+    "One": "次連線"
+  },
+  "OfflineDevices": {
+    "One": "離線"
+  },
+  "RegisteredUsers": {
+    "One": "註冊使用者數"
+  },
+  "ToggleTheme": {
+    "One": "切換主題"
+  },
+  "Connecting": {
+    "One": "連線中"
+  },
+  "NoData": {
+    "One": "暫無資料"
+  },
+  "Time": {
+    "One": "時間"
+  },
+  "Closed": {
+    "One": "已結束"
+  },
+  "Online24h": {
+    "One": "24 小時內活躍"
+  },
+  "RecentConns": {
+    "One": "最近連線"
+  },
+  "Dashboard": {
+    "One": "儀表盤"
+  },
+  "DashboardDesc": {
+    "One": "遠端裝置與連線概覽"
+  },
+  "Users": {
+    "One": "使用者"
+  },
+  "ChangeLanguage": {
+    "One": "切換語言"
+  },
+  "Other": {
+    "One": "其他"
   }
 }

@@ -552,5 +552,35 @@
   },
   "ToggleTheme": {
     "One": "切换主题"
+  },
+  "For OIDC login without a password, enter any 4-20 letters": {
+    "One": "For OIDC login without a password, enter any 4-20 letters"
+  },
+  "Check your IdP docs, without": {
+    "One": "Check your IdP docs, without"
+  },
+  "or login in with": {
+    "One": "or login in with"
+  },
+  "Email": {
+    "One": "Email"
+  },
+  "Optional, default is": {
+    "One": "Optional, default is"
+  },
+  "Import": {
+    "One": "Import"
+  },
+  "Information": {
+    "One": "Information"
+  },
+  "AddressBookCollection": {
+    "One": "Address Book Collection"
+  },
+  "View": {
+    "One": "View"
+  },
+  "MyPeer": {
+    "One": "My Devices"
   }
 }
