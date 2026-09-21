@@ -5,6 +5,7 @@ mod api;
 mod auth;
 mod config;
 mod db;
+mod login_limiter;
 mod models;
 mod utils;
 mod web;
@@ -39,9 +40,18 @@ async fn main() -> anyhow::Result<()> {
     let db = Arc::new(Db::open(&db_path)?);
     db.init_schema()?;
 
+    let login_limiter = Arc::new(crate::login_limiter::LoginLimiter::new(
+        crate::login_limiter::SecurityPolicy {
+            captcha_threshold: config.app.captcha_threshold,
+            ban_threshold: config.app.ban_threshold,
+            attempts_window: std::time::Duration::from_secs(5 * 60),
+            ban_duration: std::time::Duration::from_secs(30 * 60),
+        },
+    ));
     let state = AdminState {
         config_manager: config_manager.clone(),
         db: db.clone(),
+        login_limiter,
     };
 
     let app = build_router(state, &config);

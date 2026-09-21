@@ -20,6 +20,8 @@ use crate::models::{LoginLog, User};
 pub struct AdminState {
     pub config_manager: Arc<ConfigManager>,
     pub db: Arc<Db>,
+    /// 登录限流器（进程内存态，对齐 Go global.LoginLimiter）
+    pub login_limiter: Arc<crate::login_limiter::LoginLimiter>,
 }
 
 /// 路由注册（对齐 Go http/router/admin.go）
@@ -509,18 +511,40 @@ pub async fn handle_login(
         return common::fail(101, "PwdLoginDisabled");
     }
 
+    // 登录限流（对齐 Go LoginLimiter）：封禁 → 423；达到阈值 → 要求验证码
+    let ip = crate::utils::client_ip(&headers, "127.0.0.1");
+    let (banned, need_captcha) = state.login_limiter.check_security_status(&ip);
+    if banned {
+        return common::fail_msg(423, "Banned".to_string());
+    }
+    if need_captcha
+        && (body.captcha_id.is_empty()
+            || body.captcha.is_empty()
+            || !state
+                .login_limiter
+                .verify_captcha(&body.captcha_id, &body.captcha))
+    {
+        return common::fail(101, "CaptchaError");
+    }
+
     // 查用户
     let user = user_by_username(&state.db, &body.username);
     let user = match user {
         Some(u) => u,
         None => {
-            return common::fail(101, "UsernameOrPasswordError");
+            state.login_limiter.record_failed_attempt(&ip);
+            let (_, need) = state.login_limiter.check_security_status(&ip);
+            let code = if need { 110 } else { 101 };
+            return common::fail(code, "UsernameOrPasswordError");
         }
     };
     // 校验密码
     let (ok, new_hash) = crate::utils::verify_password(&user.password, &body.password);
     if !ok {
-        return common::fail(101, "UsernameOrPasswordError");
+        state.login_limiter.record_failed_attempt(&ip);
+        let (_, need) = state.login_limiter.check_security_status(&ip);
+        let code = if need { 110 } else { 101 };
+        return common::fail(code, "UsernameOrPasswordError");
     }
     if let Some(new_hash) = new_hash {
         let conn = state.db.conn();
@@ -534,7 +558,7 @@ pub async fn handle_login(
         return common::fail(101, "UserDisabled");
     }
 
-    let ip = crate::utils::client_ip(&headers, "127.0.0.1");
+    state.login_limiter.remove_attempts(&ip);
     let token = do_login(
         &state,
         &user,
@@ -634,10 +658,17 @@ pub async fn handle_logout(State(state): State<AdminState>, headers: HeaderMap) 
 }
 
 /// GET /api/admin/login-options
-pub async fn handle_login_options(State(state): State<AdminState>) -> Json<Value> {
+pub async fn handle_login_options(
+    State(state): State<AdminState>,
+    headers: HeaderMap,
+) -> Json<Value> {
     let config = state.config_manager.get().await;
     let ops = crate::api::oauth::oauth_provider_ops(&state);
-    let need_captcha = false; // 登录限流：P3 引入
+    let ip = crate::utils::client_ip(&headers, "127.0.0.1");
+    let (banned, need_captcha) = state.login_limiter.check_security_status(&ip);
+    if banned {
+        return common::fail(101, "LoginBanned");
+    }
     common::success(json!({
         "ops": ops,
         "register": config.app.register,
@@ -647,9 +678,22 @@ pub async fn handle_login_options(State(state): State<AdminState>) -> Json<Value
     }))
 }
 
-/// GET /api/admin/captcha（P3 完整实现；先返回 no-captcha 失败）
-pub async fn handle_captcha(State(_state): State<AdminState>) -> Json<Value> {
-    common::fail(101, "NoCaptchaRequired")
+/// GET /api/admin/captcha（对齐 Go Login.Captcha）
+pub async fn handle_captcha(State(state): State<AdminState>, headers: HeaderMap) -> Json<Value> {
+    let ip = crate::utils::client_ip(&headers, "127.0.0.1");
+    let (banned, need_captcha) = state.login_limiter.check_security_status(&ip);
+    if banned {
+        return common::fail(101, "LoginBanned");
+    }
+    if !need_captcha {
+        return common::fail(101, "NoCaptchaRequired");
+    }
+    match state.login_limiter.require_captcha() {
+        Some((id, _answer, b64)) => common::success(json!({
+            "captcha": { "id": id, "b64": b64 },
+        })),
+        None => common::fail(101, "CaptchaError"),
+    }
 }
 
 /// POST /api/admin/user/register
@@ -692,13 +736,13 @@ pub async fn handle_register(
     if status == 2 {
         return common::fail(101, "RegisterSuccessWaitAdminConfirm");
     }
-    let ip = crate::utils::client_ip(&headers, "127.0.0.1");
+    let reg_ip = crate::utils::client_ip(&headers, "127.0.0.1");
     let token = do_login(
         &state,
         &user,
         &LoginLog {
             client: "webadmin".to_string(),
-            ip,
+            ip: reg_ip,
             type_: "account".to_string(),
             ..Default::default()
         },

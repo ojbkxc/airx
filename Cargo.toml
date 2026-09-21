@@ -68,6 +68,8 @@ parking_lot = "0.12"
 
 # Database (SQLite via rusqlite bundled)
 rusqlite = { version = "0.31", features = ["bundled"], optional = true }
+url = "2.5.7"
+reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
 
 [dev-dependencies]
 tempfile = "3"

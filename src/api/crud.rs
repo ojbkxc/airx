@@ -2241,7 +2241,7 @@ pub async fn handle_share_record_batch_delete(
 // 注意：Go 中 oauth CRUD 在 AdminPrivilege 组，这里 handler 内做 is_admin 校验
 // ══════════════════════════════════════════════════════════════════
 
-fn row_to_oauth(row: &rusqlite::Row) -> rusqlite::Result<crate::models::Oauth> {
+pub fn row_to_oauth(row: &rusqlite::Row) -> rusqlite::Result<crate::models::Oauth> {
     Ok(crate::models::Oauth {
         id: row.get(0)?,
         op: row.get(1)?,

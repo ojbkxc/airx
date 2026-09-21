@@ -87,3 +87,9 @@ pub fn float_to_string(v: f64) -> String {
         format!("{}", v)
     }
 }
+
+/// base64 编码（标准字母表，无填充差异由 base64 crate 处理）
+pub fn b64_encode(data: &[u8]) -> String {
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.encode(data)
+}
