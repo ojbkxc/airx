@@ -1,0 +1,350 @@
+/* ============================================================
+   AIRX 管理后台 — AIGX 深色玻璃拟态皮肤（覆盖 element-plus）
+   设计令牌对齐 AIGX frontend/src/App.css 深色主题
+   ============================================================ */
+
+:root {
+  /* 背景 / 卡片（对齐 AIGX dark：bg #171717, card #272727） */
+  --el-bg-color-page: #101014;
+  --el-bg-color: #17171c;
+  --el-bg-color-overlay: #1e1e24;
+  --el-fill-color-blank: #17171c;
+
+  /* 文本 */
+  --el-text-color-primary: #eeeeee;
+  --el-text-color-regular: #c9c9d1;
+  --el-text-color-secondary: #9a9aa5;
+  --el-text-color-placeholder: #6f6f7c;
+  --el-text-color-disabled: #5c5c66;
+
+  /* 边框 */
+  --el-border-color: #3f3f46;
+  --el-border-color-light: #38383f;
+  --el-border-color-lighter: #2e2e35;
+  --el-border-color-extra-light: #26262c;
+
+  /* 主色 → AIGX 高亮白 */
+  --el-color-primary: #ffffff;
+  --el-color-primary-light-3: rgba(255, 255, 255, 0.72);
+  --el-color-primary-light-5: rgba(255, 255, 255, 0.5);
+  --el-color-primary-light-7: rgba(255, 255, 255, 0.3);
+  --el-color-primary-light-8: rgba(255, 255, 255, 0.2);
+  --el-color-primary-light-9: rgba(255, 255, 255, 0.1);
+  --el-color-primary-dark-2: #d0d0d0;
+
+  /* 填充（按钮/表格 hover 基底） */
+  --el-fill-color: #26262c;
+  --el-fill-color-light: #212127;
+  --el-fill-color-lighter: #1e1e24;
+  --el-fill-color-extra-light: #1b1b21;
+
+  --el-mask-color: rgba(0, 0, 0, 0.6);
+  --el-mask-color-extra-light: rgba(0, 0, 0, 0.4);
+
+  --el-box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --el-box-shadow-light: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --el-box-shadow-lighter: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+  --airx-glass-blur: 12px;
+  --airx-card-bg: rgba(28, 28, 34, 0.62);
+  --airx-border-glow: rgba(255, 255, 255, 0.08);
+}
+
+html.dark {
+  --el-bg-color-page: #101014;
+  --el-bg-color: #17171c;
+  --el-bg-color-overlay: #1e1e24;
+  --el-fill-color-blank: #17171c;
+}
+
+body {
+  background:
+    radial-gradient(1200px 800px at 15% -10%, rgba(255, 255, 255, 0.07), transparent 60%),
+    radial-gradient(900px 600px at 90% 5%, rgba(255, 255, 255, 0.05), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(255, 255, 255, 0.03), transparent 60%),
+    #101014;
+  background-attachment: fixed;
+}
+
+/* ── 玻璃卡片 ─────────────────────────────── */
+.el-card {
+  background: var(--airx-card-bg);
+  backdrop-filter: blur(var(--airx-glass-blur));
+  -webkit-backdrop-filter: blur(var(--airx-glass-blur));
+  border: 1px solid var(--airx-border-glow);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.el-card__header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px 18px;
+}
+.el-card__body { padding: 18px; }
+
+/* ── 对话框 / 抽屉：毛玻璃 ─────────────────── */
+.el-dialog {
+  background: rgba(26, 26, 32, 0.86);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--airx-border-glow);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+.el-dialog__header { padding: 16px 20px 8px; }
+.el-dialog__title { color: var(--el-text-color-primary); }
+.el-dialog__body { padding: 12px 20px; }
+.el-dialog__footer { padding: 12px 20px 18px; }
+
+.el-drawer {
+  background: rgba(26, 26, 32, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid var(--airx-border-glow);
+}
+
+/* ── 表格 ─────────────────────────────────── */
+.el-table {
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: rgba(255, 255, 255, 0.04);
+  --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.06);
+  --el-table-border-color: rgba(255, 255, 255, 0.07);
+  --el-table-text-color: #e5e5e5;
+  --el-table-header-text-color: #9a9aa5;
+  background: transparent;
+}
+.el-table__inner-wrapper::before,
+.el-table__border-line-patch,
+.el-table::before { display: none !important; }
+.el-table th.el-table__cell {
+  background: rgba(255, 255, 255, 0.03);
+  font-weight: 600;
+}
+
+/* ── 输入框 / 选择器 ─────────────────────── */
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset !important;
+  border-radius: 8px;
+}
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
+  background: rgba(255, 255, 255, 0.07);
+}
+.el-input__inner { color: var(--el-text-color-primary); }
+
+/* 下拉弹层 */
+.el-popper {
+  background: rgba(28, 28, 34, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--airx-border-glow);
+  border-radius: 10px;
+  box-shadow: var(--el-box-shadow-light);
+}
+.el-popper.is-light { border-color: var(--airx-border-glow); }
+.el-select-dropdown__item.is-hovering { background: rgba(255, 255, 255, 0.06); }
+.el-select-dropdown__item.is-selected { color: #ffffff; }
+
+/* ── 侧边菜单 ─────────────────────────────── */
+.el-aside {
+  background: rgba(18, 18, 22, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid var(--airx-border-glow);
+}
+.el-menu {
+  background: transparent;
+  border-right: none;
+}
+.el-menu-item,
+.el-sub-menu__title {
+  color: #c9c9d1;
+  border-radius: 8px;
+  margin: 2px 8px;
+  height: 44px;
+  line-height: 44px;
+}
+.el-menu-item:hover,
+.el-sub-menu__title:hover { background: rgba(255, 255, 255, 0.06); }
+.el-menu-item.is-active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.el-menu .el-menu-item.is-active::before { display: none; }
+
+/* ── 按钮 ─────────────────────────────────── */
+.el-button--primary {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #101014;
+  font-weight: 600;
+}
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #101014;
+}
+.el-button {
+  border-radius: 8px;
+}
+
+/* ── 分页 / 标签 / 其他 ───────────────────── */
+.el-pagination.is-background .el-pager li:not(.is-disabled).is-active {
+  background: #ffffff;
+  color: #101014;
+}
+.el-tag { border-radius: 6px; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #52525b; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ════════════════════════════════════════════════════════
+   第二部分：AIGX 审美细节
+   对齐 AIGX App.css：状态色板 / 卡片 hover / 骨架屏 / 空态 / 数据卡
+   ════════════════════════════════════════════════════════ */
+
+/* ── 状态色板（badge）──────────────────────────
+   AIGX 手法：rgba(色,0.15) 底 + 原色文字，深底上既柔和又分明 */
+:root {
+  --airx-mint: #34d399;
+  --airx-cyan: #7ca4f5;
+  --airx-amber: #fbbf24;
+  --airx-coral: #f87171;
+  --airx-violet: #a78bfa;
+}
+
+.el-tag--success {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.3);
+  color: var(--airx-mint);
+}
+.el-tag--warning {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: var(--airx-amber);
+}
+.el-tag--danger {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: var(--airx-coral);
+}
+.el-tag--info {
+  background: rgba(154, 154, 165, 0.15);
+  border-color: rgba(154, 154, 165, 0.3);
+  color: #c9c9d1;
+}
+.el-tag--primary {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+.el-tag { font-weight: 500; }
+
+/* ── 数据卡 hover 反馈 ────────────────────────
+   AIGX 手法：border 变亮 + 阴影加深，0.2s 过渡 */
+.el-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.el-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ── 骨架屏 shimmer ───────────────────────────
+   AIGX 手法：扫光渐变 + translateX 往返动画 */
+.el-loading-mask {
+  background: rgba(16, 16, 20, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.el-loading-spinner .circular { color: var(--el-color-primary); }
+
+/* 表格 / 列表加载时的 shimmer 行 */
+@keyframes airx-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.el-table__body tr.el-table__row {
+  transition: background 0.15s ease;
+}
+
+/* ── 空状态（el-empty）────────────────────────
+   AIGX 手法：精致图标 + 柔和文案 + 引导动作 */
+.el-empty {
+  padding: 36px 16px;
+}
+.el-empty__image {
+  width: 84px;
+  height: 84px;
+  opacity: 0.5;
+}
+.el-empty__description p {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.el-empty__bottom { margin-top: 14px; }
+
+/* ── 数据卡（AIGX stat-card 等价物）──────────
+   供管理后台在 el-card 内自行套用；深色大数字 + 图标徽章 */
+.airx-stat-card {
+  background: var(--airx-card-bg);
+  backdrop-filter: blur(var(--airx-glass-blur));
+  -webkit-backdrop-filter: blur(var(--airx-glass-blur));
+  border: 1px solid var(--airx-border-glow);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+.airx-stat-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.airx-stat-title {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.airx-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #ffffff;
+}
+.airx-stat-desc {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+.airx-stat-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── 侧栏用户区（对齐 AIGX sidebar-user 兜底） ──
+   若后台侧栏有用户信息，让它在玻璃上更清晰 */
+.el-avatar {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}

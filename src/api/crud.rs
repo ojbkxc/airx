@@ -2991,7 +2991,7 @@ pub async fn handle_dashboard_stats(
 // ══════════════════════════════════════════════════════════════════
 
 fn peer_cols() -> &'static str {
-    "id, cpu, hostname, memory, os, username, uuid, version, user_id, last_online_time, last_online_ip, group_id, alias, created_at, updated_at"
+    "row_id, id, cpu, hostname, memory, os, username, uuid, version, user_id, last_online_time, last_online_ip, group_id, alias, created_at, updated_at"
 }
 
 fn row_to_peer_full(row: &rusqlite::Row) -> rusqlite::Result<crate::models::Peer> {
@@ -3111,9 +3111,20 @@ pub fn peer_list(state: &AdminState, q: &PeerQuery, force_user_id: Option<i64>) 
         ))
         .ok()
         .and_then(|mut stmt| {
-            stmt.query_map(p.as_slice(), row_to_peer_full)
-                .ok()
-                .and_then(|it| it.collect::<Result<Vec<_>, _>>().ok())
+            let it = match stmt.query_map(p.as_slice(), row_to_peer_full) {
+                Ok(it) => it,
+                Err(e) => {
+                    tracing::error!("peer_list query_map: {}", e);
+                    return None;
+                }
+            };
+            match it.collect::<Result<Vec<_>, _>>() {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    tracing::error!("peer_list row parse: {}", e);
+                    None
+                }
+            }
         })
         .unwrap_or_default();
     drop(conn);
