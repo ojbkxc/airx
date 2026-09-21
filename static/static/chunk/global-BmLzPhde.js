@@ -1,1 +1,0 @@
-import{h as a}from"../entry/index-4rphdr4z.js";import{r as e}from"./_@vue-R7r0uN4o.js";function c(){const s=e([]);return{allUsers:s,getAllUsers:async()=>{const t=await a({page_size:9999}).catch(r=>!1);t&&(s.value=t.data.list)}}}export{c as l};

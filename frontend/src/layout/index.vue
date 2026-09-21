@@ -46,7 +46,10 @@
 
 <style lang="scss" scoped>
 .app-header {
-  background-color: #3f454b;
+  background-color: rgba(23, 23, 28, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--basicWhite);
   display: flex;
   height: 50px;

@@ -4,11 +4,11 @@
    ============================================================ */
 
 :root {
-  /* 背景 / 卡片（对齐 AIGX dark：bg #171717, card #272727） */
-  --el-bg-color-page: #101014;
-  --el-bg-color: #17171c;
-  --el-bg-color-overlay: #1e1e24;
-  --el-fill-color-blank: #17171c;
+  /* 背景 / 卡片（对齐 AIGX dark：bg #171717, card #272727, sidebar #1f1f1f） */
+  --el-bg-color-page: #171717;
+  --el-bg-color: #1f1f1f;
+  --el-bg-color-overlay: #272727;
+  --el-fill-color-blank: #1f1f1f;
 
   /* 文本 */
   --el-text-color-primary: #eeeeee;
@@ -21,7 +21,7 @@
   --el-border-color: #3f3f46;
   --el-border-color-light: #38383f;
   --el-border-color-lighter: #2e2e35;
-  --el-border-color-extra-light: #26262c;
+  --el-border-color-extra-light: #232323;
 
   /* 主色 → AIGX 高亮白 */
   --el-color-primary: #ffffff;
@@ -33,10 +33,10 @@
   --el-color-primary-dark-2: #d0d0d0;
 
   /* 填充（按钮/表格 hover 基底） */
-  --el-fill-color: #26262c;
-  --el-fill-color-light: #212127;
-  --el-fill-color-lighter: #1e1e24;
-  --el-fill-color-extra-light: #1b1b21;
+  --el-fill-color: #2a2a2a;
+  --el-fill-color-light: #272727;
+  --el-fill-color-lighter: #232323;
+  --el-fill-color-extra-light: #1f1f1f;
 
   --el-mask-color: rgba(0, 0, 0, 0.6);
   --el-mask-color-extra-light: rgba(0, 0, 0, 0.4);
@@ -46,15 +46,15 @@
   --el-box-shadow-lighter: 0 2px 8px rgba(0, 0, 0, 0.3);
 
   --airx-glass-blur: 12px;
-  --airx-card-bg: rgba(28, 28, 34, 0.62);
+  --airx-card-bg: rgba(39, 39, 39, 0.62);
   --airx-border-glow: rgba(255, 255, 255, 0.08);
 }
 
 html.dark {
-  --el-bg-color-page: #101014;
-  --el-bg-color: #17171c;
-  --el-bg-color-overlay: #1e1e24;
-  --el-fill-color-blank: #17171c;
+  --el-bg-color-page: #171717;
+  --el-bg-color: #1f1f1f;
+  --el-bg-color-overlay: #272727;
+  --el-fill-color-blank: #1f1f1f;
 }
 
 body {
@@ -62,7 +62,7 @@ body {
     radial-gradient(1200px 800px at 15% -10%, rgba(255, 255, 255, 0.07), transparent 60%),
     radial-gradient(900px 600px at 90% 5%, rgba(255, 255, 255, 0.05), transparent 60%),
     radial-gradient(700px 500px at 50% 110%, rgba(255, 255, 255, 0.03), transparent 60%),
-    #101014;
+    #171717;
   background-attachment: fixed;
 }
 
@@ -83,7 +83,7 @@ body {
 
 /* ── 对话框 / 抽屉：毛玻璃 ─────────────────── */
 .el-dialog {
-  background: rgba(26, 26, 32, 0.86);
+  background: rgba(39, 39, 39, 0.86);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--airx-border-glow);
@@ -96,7 +96,7 @@ body {
 .el-dialog__footer { padding: 12px 20px 18px; }
 
 .el-drawer {
-  background: rgba(26, 26, 32, 0.9);
+  background: rgba(39, 39, 39, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-left: 1px solid var(--airx-border-glow);
@@ -139,7 +139,7 @@ body {
 
 /* 下拉弹层 */
 .el-popper {
-  background: rgba(28, 28, 34, 0.92);
+  background: rgba(39, 39, 39, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--airx-border-glow);
@@ -152,7 +152,7 @@ body {
 
 /* ── 侧边菜单 ─────────────────────────────── */
 .el-aside {
-  background: rgba(18, 18, 22, 0.7);
+  background: rgba(31, 31, 31, 0.72);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-right: 1px solid var(--airx-border-glow);
@@ -178,14 +178,14 @@ body {
 .el-button--primary {
   background: #ffffff;
   border-color: #ffffff;
-  color: #101014;
+  color: #171717;
   font-weight: 600;
 }
 .el-button--primary:hover,
 .el-button--primary:focus {
   background: rgba(255, 255, 255, 0.85);
   border-color: rgba(255, 255, 255, 0.85);
-  color: #101014;
+  color: #171717;
 }
 .el-button {
   border-radius: 8px;
@@ -194,7 +194,7 @@ body {
 /* ── 分页 / 标签 / 其他 ───────────────────── */
 .el-pagination.is-background .el-pager li:not(.is-disabled).is-active {
   background: #ffffff;
-  color: #101014;
+  color: #171717;
 }
 .el-tag { border-radius: 6px; }
 
@@ -259,7 +259,7 @@ body {
 /* ── 骨架屏 shimmer ───────────────────────────
    AIGX 手法：扫光渐变 + translateX 往返动画 */
 .el-loading-mask {
-  background: rgba(16, 16, 20, 0.65);
+  background: rgba(23, 23, 23, 0.65);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }

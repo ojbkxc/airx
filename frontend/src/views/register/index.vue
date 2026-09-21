@@ -95,17 +95,25 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #2d3a4b;
+  background:
+    radial-gradient(1200px 800px at 15% -10%, rgba(255, 255, 255, 0.07), transparent 60%),
+    radial-gradient(900px 600px at 90% 5%, rgba(255, 255, 255, 0.05), transparent 60%),
+    radial-gradient(700px 500px at 50% 110%, rgba(255, 255, 255, 0.03), transparent 60%),
+    #171717;
+  background-attachment: fixed;
   padding: 20px;
   box-sizing: border-box;
 }
 
 .login-card {
   width: 360px;
-  background-color: #283342;
+  background: rgba(39, 39, 39, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
   padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   text-align: center;
 }
 

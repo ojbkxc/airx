@@ -15,6 +15,9 @@
 
 <style scoped lang="scss">
 .scroll-sidebar {
-  background-color: #2d3a4b;
+  background-color: rgba(18, 18, 22, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 </style>

@@ -3,7 +3,7 @@
     <div class="menu-item">
       <el-switch
           v-model="isDark"
-          style="--el-switch-on-color:#18222c"
+          style="--el-switch-on-color:#ffffff"
       >
         <template #active-action>
           <el-icon>

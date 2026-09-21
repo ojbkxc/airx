@@ -71,15 +71,23 @@
 .oauth {
   width: 100vw;
   height: 100vh;
-  background-color: #2d3a4b;
+  background:
+    radial-gradient(1200px 800px at 15% -10%, rgba(255, 255, 255, 0.07), transparent 60%),
+    radial-gradient(900px 600px at 90% 5%, rgba(255, 255, 255, 0.05), transparent 60%),
+    #171717;
+  background-attachment: fixed;
   padding-top: 25vh;
   box-sizing: border-box;
 
   .card {
     max-width: 500px;
-    background-color: #283342;
+    background: rgba(39, 39, 39, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
     color: #fff;
-    border: none;
     margin: 0 auto;
     text-align: center;
 
