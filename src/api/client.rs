@@ -30,6 +30,7 @@ fn unauthorized() -> Response {
     (status, body).into_response()
 }
 
+#[allow(clippy::result_large_err)]
 async fn auth(state: &AdminState, headers: &HeaderMap) -> Result<User, Response> {
     let config = state.config_manager.get().await;
     auth::rust_auth(&state.db, headers, config.app.token_expire_secs).map_err(|_| unauthorized())
