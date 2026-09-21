@@ -1,0 +1,79 @@
+# ── Workspace ────────────────────────────────────────────────────────
+# 多 crate 工作区：主服务 + 预留独立 crate（airx-net）
+[workspace]
+members = [".", "airx-net"]
+resolver = "2"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+
+[package]
+name = "airx"
+version = "0.1.0"
+description = "AIRX — Rust 重写的 RustDesk 自建服务器管理后端（lejianwen/rustdesk-api 姊妹项目）"
+edition = "2021"
+
+# ── Feature flags ────────────────────────────────────────────────────
+[features]
+default = ["sqlite"]
+sqlite = ["dep:rusqlite"]
+
+[dependencies]
+# HTTP
+axum = { version = "0.7", features = ["macros"] }
+tokio = { workspace = true }
+hyper = { version = "1", features = ["full"] }
+http = "1"
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "fs", "compression-gzip"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+uuid = { workspace = true }
+
+# Crypto / auth
+bcrypt = "0.15"
+md5 = "0.7"
+base64 = "0.22"
+rand = "0.8"
+sha2 = "0.10"
+hmac = "0.12"
+hex = "0.4"
+
+# Time
+chrono = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Config
+toml = "0.8"
+dirs = "5"
+
+# Error handling
+anyhow = "1"
+
+# Utilities
+regex = "1"
+parking_lot = "0.12"
+
+# Database (SQLite via rusqlite bundled)
+rusqlite = { version = "0.31", features = ["bundled"], optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+# ── Release 构建加固 ────────────────────────────────────────────────
+[profile.release]
+lto = "thin"
+strip = true
+codegen-units = 1

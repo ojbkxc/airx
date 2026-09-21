@@ -1,0 +1,8 @@
+[package]
+name = "airx-net"
+version = "0.1.0"
+description = "AIRX 独立网络层 crate（预留 workspace 成员，对齐 AIGX aigx-net 结构）"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
