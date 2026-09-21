@@ -1,0 +1,15 @@
+target/
+frontend/node_modules/
+frontend/dist/
+static/
+.git/
+.github/
+*.md
+tools/
+scripts/
+*.log
+.env
+config.toml
+*.db
+*.db-wal
+*.db-shm
