@@ -74,7 +74,7 @@
 <style lang="scss" scoped>
 
 .tag {
-  border-radius: 0;
+  border-radius: 9999px;
   cursor: pointer;
 
   &.active {

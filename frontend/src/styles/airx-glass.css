@@ -471,3 +471,150 @@ body {
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
+
+/* ════════════════════════════════════════════════════════
+   第四部分：其余控件全覆盖（alert / tabs / color-picker /
+   popover / dropdown / upload / progress / checkbox / radio label）
+   对齐 AIGX 设计语言：玻璃底 + 半透明状态色 + 白主色
+   ════════════════════════════════════════════════════════ */
+
+/* ── 表单 label 全局 ───────────────────────
+   统一为浅色（避免某些页面漏设 ::v-deep 出现暗底深字） */
+.el-form-item__label {
+  color: var(--el-text-color-regular);
+}
+
+/* ── 提示条（el-alert）─────────────────────
+   AIGX 手法：半透明色底 + 原色文字 */
+.el-alert {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: var(--el-text-color-primary);
+}
+.el-alert--info { background: rgba(154, 154, 165, 0.12); border-color: rgba(154, 154, 165, 0.25); }
+.el-alert--success { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.28); }
+.el-alert--warning { background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.28); }
+.el-alert--error { background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.28); }
+.el-alert__title,
+.el-alert__description { color: var(--el-text-color-primary); }
+
+/* ── 标签页（el-tabs，rustdesk/control）────
+   对齐 AIGX 顶栏：浅灰文字 + 白高亮下划线 */
+.el-tabs__nav-wrap::after {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.el-tabs__item {
+  color: var(--el-text-color-regular);
+  font-weight: 500;
+}
+.el-tabs__item.is-active {
+  color: #ffffff;
+}
+.el-tabs__active-bar {
+  background-color: #ffffff;
+}
+.el-tabs--card > .el-tabs__header .el-tabs__item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+.el-tabs--card > .el-tabs__header .el-tabs__item.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* ── 颜色选择器（el-color-picker）────────── */
+.el-color-picker__trigger {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+}
+.el-color-picker__color {
+  border-radius: 6px;
+}
+.el-color-picker__panel {
+  background: rgba(39, 39, 39, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--airx-border-glow);
+  border-radius: 10px;
+  box-shadow: var(--el-box-shadow-light);
+}
+
+/* ── 气泡弹层（el-popover / el-tooltip / el-dropdown）──
+   与 el-popper 同款玻璃 */
+.el-popover,
+.el-tooltip__popper,
+.el-dropdown__popper {
+  background: rgba(39, 39, 39, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--airx-border-glow);
+  border-radius: 10px;
+  box-shadow: var(--el-box-shadow-light);
+  color: var(--el-text-color-primary);
+}
+.el-dropdown-menu {
+  background: transparent;
+  padding: 4px;
+}
+.el-dropdown-menu__item {
+  color: var(--el-text-color-regular);
+  border-radius: 8px;
+  margin: 2px 0;
+}
+.el-dropdown-menu__item:not(.is-disabled):hover,
+.el-dropdown-menu__item:not(.is-disabled):focus {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.el-dropdown-menu__item.is-disabled { color: var(--el-text-color-disabled); }
+
+/* ── 上传（el-upload，imagesUpload / peer 导入）──
+   对齐 AIGX 玻璃卡片：拖拽区描边 + 悬停高亮 */
+.el-upload-dragger {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+}
+.el-upload-dragger:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.07);
+}
+.el-upload--picture-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+}
+.el-upload--picture-card:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.el-upload-list__item {
+  border-radius: 12px;
+}
+.el-upload__text,
+.el-upload__tip {
+  color: var(--el-text-color-secondary);
+}
+
+/* ── 进度圈（el-progress，图片上传中）────── */
+.el-progress__text {
+  color: var(--el-text-color-primary);
+}
+
+/* ── 复选 / 单选 文字（列设置等）────────── */
+.el-checkbox__label,
+.el-radio__label {
+  color: var(--el-text-color-regular);
+}
+.el-checkbox__input.is-checked + .el-checkbox__label,
+.el-radio__input.is-checked + .el-radio__label {
+  color: #ffffff;
+}
+
+/* ── 文本 / 空间（el-text / el-space）────── */
+.el-text { color: var(--el-text-color-regular); }
+.el-text.is-primary { color: #ffffff; }

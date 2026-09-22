@@ -57,7 +57,7 @@
 
 .header-tags {
   height: auto;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   padding: 0;
 }

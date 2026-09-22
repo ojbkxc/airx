@@ -224,7 +224,7 @@
 
     .drag-tips {
       font-size: 12px;
-      color: #999;
+      color: var(--el-text-color-secondary);
     }
 
 

@@ -257,8 +257,8 @@
   .aside {
     .aside-tags {
       margin-top: 15px;
-      border: 1px solid #eee;
-      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
       min-height: calc(100vh - 200px);
       padding: 10px;
       display: flex;
@@ -274,9 +274,9 @@
         justify-content: center;
         line-height: 1;
         height: 28px;
-        background-color: var(--tag-bg-color);
+        background-color: rgba(255, 255, 255, 0.06);
         font-size: 14px;
-        border-radius: 8px;
+        border-radius: 9999px;
         cursor: pointer;
 
         &.checked {

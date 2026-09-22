@@ -49,7 +49,7 @@
           <el-radio-group v-model="formData.type">
             <el-radio v-for="item in groupTypes" :key="item.value" :label="item.value" style="display: block">
               {{ item.label }}
-              <span style="font-size: 12px;color: #999">{{ item.note }}</span>
+              <span style="font-size: 12px;color: var(--el-text-color-secondary)">{{ item.note }}</span>
             </el-radio>
           </el-radio-group>
         </el-form-item>
