@@ -663,5 +663,11 @@
   },
   "TfaRequired": {
     "One": "Se requiere el código de dos factores"
+  },
+  "NotFound": {
+    "One": "Página no encontrada"
+  },
+  "BackHome": {
+    "One": "Volver al inicio"
   }
 }

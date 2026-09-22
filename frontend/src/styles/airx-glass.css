@@ -197,14 +197,24 @@ body {
 .el-button {
   border-radius: 8px;
   font-weight: 500;
-  min-height: 36px;
   transition: all 0.2s ease;
+}
+/* 仅默认尺寸设最小高度，避免影响 small/mini 按钮密度 */
+.el-button:not(.is-small):not(.is-large):not(.is-text):not(.is-link) {
+  min-height: 36px;
 }
 .el-button--primary {
   background: #ffffff;
   border-color: #ffffff;
   color: #171717;
   font-weight: 600;
+}
+.el-button--primary.is-disabled,
+.el-button--primary.is-disabled:hover,
+.el-button--primary.is-disabled:focus {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(23, 23, 23, 0.45);
 }
 .el-button--primary:hover,
 .el-button--primary:focus {
@@ -262,6 +272,30 @@ body {
 .el-button.is-circle {
   border-radius: 50%;
 }
+/* text 按钮 → 浅色文字 + 悬停白（rustdesk/control 刷新链接等） */
+.el-button.is-text,
+.el-button--text {
+  background: transparent;
+  color: var(--el-text-color-regular);
+  min-height: auto;
+}
+.el-button.is-text:hover,
+.el-button--text:hover,
+.el-button.is-text:focus,
+.el-button--text:focus {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+/* 禁用态通用 */
+.el-button.is-disabled,
+.el-button.is-disabled:hover,
+.el-button.is-disabled:focus {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* size=small 保持紧凑 */
+.el-button.is-small { min-height: 28px; font-size: 12px; }
+.el-button.is-large { min-height: 44px; font-size: 16px; }
 
 /* ── 输入框 / 选择器：AIGX .form-input 高度与光圈 ── */
 .el-input__wrapper,
@@ -618,3 +652,124 @@ body {
 /* ── 文本 / 空间（el-text / el-space）────── */
 .el-text { color: var(--el-text-color-regular); }
 .el-text.is-primary { color: #ffffff; }
+
+/* ════════════════════════════════════════════════════════
+   第五部分：细节补全
+   ─ NProgress 顶进度条白
+   ─ el-input append/prepend 玻璃化（验证码 / 复制链接）
+   ─ el-card title / 重置卡片默认底（my/info 等 :title 卡片）
+   ─ el-link / el-backtop / el-empty / el-result 兜底
+   ─ el-loading spinner 颜色
+   ─ 修正 table-actions 按钮间距与 fixed 列阴影
+   ════════════════════════════════════════════════════════ */
+
+/* ── NProgress 顶部进度条 ───────────────── */
+#nprogress .bar {
+  background: #ffffff !important;
+  height: 2px;
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px #ffffff, 0 0 5px #ffffff !important;
+}
+
+/* ── 输入框 append/prepend（验证码 / 复制按钮）──
+   去掉默认灰底，与 wrapper 同款玻璃 */
+.el-input-group__append,
+.el-input-group__prepend {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--el-text-color-regular);
+}
+.el-input-group__append .el-button,
+.el-input-group__prepend .el-button {
+  margin: -2px -20px;
+  height: calc(100% + 4px);
+}
+
+/* ── el-card :title 兜底（my/info 用 :title）──
+   el-card 默认无 title slot，仅 header 插槽；这里给一个统一 header 样式 */
+.el-card__header {
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* ── el-link / 普通链接 ─────────────────── */
+.el-link {
+  color: var(--el-text-color-regular);
+}
+.el-link:hover,
+.el-link:focus {
+  color: #ffffff;
+}
+.el-link.el-link--primary {
+  color: #ffffff;
+}
+
+/* ── el-backtop ─────────────────────────── */
+.el-backtop {
+  background: rgba(39, 39, 39, 0.9);
+  color: #ffffff;
+  border: 1px solid var(--airx-border-glow);
+  box-shadow: var(--el-box-shadow-light);
+}
+.el-backtop:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── el-empty / el-result（404 兜底）────── */
+.el-empty__description p { color: var(--el-text-color-secondary); }
+.el-result__title p { color: var(--el-text-color-primary); }
+.el-result__subtitle p { color: var(--el-text-color-secondary); }
+
+/* ── el-loading mask 文字 ───────────────── */
+.el-loading-spinner .el-loading-text {
+  color: var(--el-text-color-primary);
+}
+
+/* ── table-actions：操作列按钮紧凑间距 ───
+   多按钮列（peer/address_book）防止换行与挤迫 */
+.table-actions .el-button + .el-button {
+  margin-left: 6px;
+}
+/* fixed 列左侧分隔线 */
+.el-table__fixed-right::before,
+.el-table__fixed::before {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── 表格 selection 复选框对齐 ──────────── */
+.el-table .el-checkbox__inner {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.el-table .el-checkbox__input.is-checked .el-checkbox__inner {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+/* ── 标签 closable × 关闭按钮（多标签页）── */
+.el-tag .el-tag__close {
+  color: var(--el-text-color-secondary);
+}
+.el-tag .el-tag__close:hover {
+  color: #171717;
+  background: #ffffff;
+}
+
+/* ── 滚动条 corner ─────────────────────── */
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ── selection 高亮行 ──────────────────── */
+.el-table__body tr.el-table__row--striped td.el-table__cell,
+.el-table__body tr.current-row > td.el-table__cell {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ── 表格 empty 占位文字 ────────────────── */
+.el-table__empty-block {
+  background: transparent;
+}
+.el-table__empty-text {
+  color: var(--el-text-color-secondary);
+}

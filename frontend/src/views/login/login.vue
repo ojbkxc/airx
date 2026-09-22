@@ -247,7 +247,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #eee;
+  color: var(--el-text-color-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -322,7 +322,7 @@
     background: rgba(255, 255, 255, 0.07);
   }
   :deep(.el-input__inner) {
-    color: #eee;
+    color: var(--el-text-color-primary);
   }
   .captcha {
     cursor: pointer;
@@ -391,7 +391,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  color: #eee;
+  color: var(--el-text-color-primary);
   font-size: 13px;
   transition: background 0.2s ease, border-color 0.2s ease;
 }

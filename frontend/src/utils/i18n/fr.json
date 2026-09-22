@@ -663,5 +663,11 @@
   },
   "TfaRequired": {
     "One": "Code de vérification à deux facteurs requis"
+  },
+  "NotFound": {
+    "One": "Page introuvable"
+  },
+  "BackHome": {
+    "One": "Retour à l'accueil"
   }
 }

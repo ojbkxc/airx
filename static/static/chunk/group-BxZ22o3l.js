@@ -1,0 +1,1 @@
+import{s as t}from"../entry/index-CgrCcWpz.js";function u(r){return t({url:"/group/list",params:r})}function o(r){return t({url:"/group/create",method:"post",data:r})}function n(r){return t({url:"/group/update",method:"post",data:r})}function s(r){return t({url:"/group/delete",method:"post",data:r})}export{o as c,u as l,s as r,n as u};

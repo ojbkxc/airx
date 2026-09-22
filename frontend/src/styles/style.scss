@@ -7,7 +7,7 @@ $primaryColor: #ffffff;
   --basicBlack: #000000;
   --basicWhite: #ffffff;
   --primaryColor: #ffffff;
-  --tag-bg-color: #efefef;
+  --tag-bg-color: rgba(255, 255, 255, 0.06);
 }
 
 body {
@@ -46,6 +46,6 @@ body {
 html.dark {
   /* 自定义深色背景颜色 */
   //--el-bg-color: #626aef;
-  --tag-bg-color: #24252b;
+  --tag-bg-color: rgba(255, 255, 255, 0.06);
   --basicBlack: #fff;
 }

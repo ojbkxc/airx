@@ -5,7 +5,7 @@
     <g v-for="r in [0,0.25,0.5,0.75,1]" :key="r">
       <line :x1="pad.l" :y1="pad.t + chartH*(1-r)" :x2="600-pad.r" :y2="pad.t + chartH*(1-r)"
             stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-      <text :x="pad.l-8" :y="pad.t + chartH*(1-r)+4" text-anchor="end" fill="#9a9aa5" font-size="10">
+      <text :x="pad.l-8" :y="pad.t + chartH*(1-r)+4" text-anchor="end" :fill="mutedColor" font-size="10">
         {{ fmt(maxV*r) }}
       </text>
     </g>
@@ -18,14 +18,14 @@
       </linearGradient>
     </defs>
     <polygon :points="areaPoints" fill="url(#airxTrendGrad)"/>
-    <polyline :points="points.join(' ')" fill="none" stroke="#ffffff" stroke-width="2"
+    <polyline :points="points.join(' ')" fill="none" :stroke="accentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round"/>
 
     <!-- 数据点 -->
     <g v-for="(d,i) in data" :key="i">
-      <circle :cx="x(i)" :cy="y(d)" :r="hover===i?5:3" fill="#ffffff" stroke="rgba(28,28,34,1)" stroke-width="2"
+      <circle :cx="x(i)" :cy="y(d)" :r="hover===i?5:3" :fill="accentColor" :stroke="cardStroke" stroke-width="2"
               style="transition:r .15s ease"/>
-      <text :x="x(i)" :y="200-pad.b+16" text-anchor="middle" fill="#9a9aa5" font-size="9">
+      <text :x="x(i)" :y="200-pad.b+16" text-anchor="middle" :fill="mutedColor" font-size="9">
         {{ (d.date||'').slice(5) }}
       </text>
     </g>
@@ -33,10 +33,10 @@
     <!-- 悬停提示 -->
     <g v-if="hover!=null" pointer-events="none">
       <line :x1="x(hover)" :y1="pad.t" :x2="x(hover)" :y2="pad.t+chartH"
-            stroke="#fff" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
-      <rect :x="tipX" :y="tipY" width="110" height="36" rx="7" fill="rgba(28,28,34,0.92)" stroke="rgba(255,255,255,0.15)"/>
-      <text :x="tipX+10" :y="tipY+17" fill="#eee" font-size="11" font-weight="600">{{ data[hover].date }}</text>
-      <text :x="tipX+10" :y="tipY+30" fill="#9a9aa5" font-size="10">{{ data[hover].conns }} {{ T('Conns') }}</text>
+            :stroke="accentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+      <rect :x="tipX" :y="tipY" width="110" height="36" rx="7" :fill="tooltipBg" stroke="rgba(255,255,255,0.15)"/>
+      <text :x="tipX+10" :y="tipY+17" :fill="textMain" font-size="11" font-weight="600">{{ data[hover].date }}</text>
+      <text :x="tipX+10" :y="tipY+30" :fill="mutedColor" font-size="10">{{ data[hover].conns }} {{ T('Conns') }}</text>
     </g>
   </svg>
   <div v-else class="empty-state">{{ T('NoData') }}</div>
@@ -50,6 +50,13 @@
   const pad = { t: 20, r: 20, b: 30, l: 45 }
   const chartW = 600 - pad.l - pad.r
   const chartH = 200 - pad.t - pad.b
+
+  // 对齐主题变量（运行时取自 :root）
+  const accentColor = '#ffffff'
+  const mutedColor = '#9a9aa5'
+  const textMain = '#eeeeee'
+  const cardStroke = 'rgba(28,28,34,1)'
+  const tooltipBg = 'rgba(28,28,34,0.92)'
 
   const maxV = computed(() => Math.max(...props.data.map(d => Number(d.conns)||0), 1))
   const x = (i) => pad.l + (i + 0.5) * (chartW / Math.max(props.data.length, 1))

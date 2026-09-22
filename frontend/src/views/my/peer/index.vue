@@ -396,11 +396,11 @@
   margin-left: 10px;
 
   &.red {
-    background-color: red;
+    background-color: var(--airx-coral);
   }
 
   &.green {
-    background-color: green;
+    background-color: var(--airx-mint);
   }
 }
 </style>

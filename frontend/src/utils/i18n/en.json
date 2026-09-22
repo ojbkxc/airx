@@ -615,5 +615,11 @@
   },
   "TfaRequired": {
     "One": "Two-factor code required"
+  },
+  "NotFound": {
+    "One": "Page not found"
+  },
+  "BackHome": {
+    "One": "Back to home"
   }
 }

@@ -601,5 +601,11 @@
   },
   "TfaRequired": {
     "One": "请输入两步验证动态码"
+  },
+  "NotFound": {
+    "One": "页面未找到"
+  },
+  "BackHome": {
+    "One": "返回首页"
   }
 }

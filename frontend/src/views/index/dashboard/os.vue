@@ -2,13 +2,13 @@
   <div v-if="slices.length" class="os-wrap">
     <svg viewBox="0 0 240 240" style="width:220px;height:220px;flex-shrink:0">
       <path v-for="(s,i) in slices" :key="i" :d="s.path" :fill="s.color"
-            stroke="rgba(28,28,34,1)" stroke-width="2"
+            :stroke="cardStroke" stroke-width="2"
             :opacity="hover==null||hover===i?1:0.35" style="transition:opacity .2s ease;cursor:pointer"
             @mouseenter="hover=i" @mouseleave="hover=null"/>
-      <text :x="120" :y="118" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">
+      <text :x="120" :y="118" text-anchor="middle" :fill="textMain" font-size="16" font-weight="700">
         {{ hover!=null ? slices[hover].pct.toFixed(1)+'%' : total }}
       </text>
-      <text :x="120" :y="136" text-anchor="middle" fill="#9a9aa5" font-size="10">
+      <text :x="120" :y="136" text-anchor="middle" :fill="mutedColor" font-size="10">
         {{ hover!=null ? slices[hover].label : T('Devices') }}
       </text>
     </svg>
@@ -30,6 +30,9 @@
   const hover = ref(null)
   const colors = ['#7ca4f5', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#22d3ee']
   const names = { windows: 'Windows', linux: 'Linux', macos: 'macOS', other: T('Other') }
+  const textMain = '#ffffff'
+  const mutedColor = '#9a9aa5'
+  const cardStroke = 'rgba(28,28,34,1)'
 
   const slices = computed(() => {
     const raw = props.data.filter(d => Number(d.count) > 0)

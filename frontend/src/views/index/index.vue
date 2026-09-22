@@ -19,38 +19,38 @@
       <div class="stat-card">
         <div class="stat-card-top">
           <div class="stat-title">{{ T('OnlineDevices') }}</div>
-          <div class="stat-icon-badge" style="background: rgba(52,211,153,0.15); color: #34d399">⚡</div>
+          <div class="stat-icon-badge" style="background: rgba(52,211,153,0.15); color: var(--airx-mint)">⚡</div>
         </div>
         <div class="stat-value">{{ stats.online_peers }}</div>
         <div class="stat-desc">
-          <span class="dot" style="background: #34d399"></span>
+          <span class="dot" style="background: var(--airx-mint)"></span>
           {{ T('Online24h') }}
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-card-top">
           <div class="stat-title">{{ T('TotalDevices') }}</div>
-          <div class="stat-icon-badge" style="background: rgba(124,164,245,0.15); color: #7ca4f5">🖥</div>
+          <div class="stat-icon-badge" style="background: rgba(124,164,245,0.15); color: var(--airx-cyan)">🖥</div>
         </div>
         <div class="stat-value">{{ stats.total_peers }}</div>
         <div class="stat-desc">
-          <span style="color: #9a9aa5">{{ T('OfflineDevices') }} {{ stats.offline_peers }}</span>
+          <span>{{ T('OfflineDevices') }} {{ stats.offline_peers }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-card-top">
           <div class="stat-title">{{ T('TodayConns') }}</div>
-          <div class="stat-icon-badge" style="background: rgba(251,191,36,0.15); color: #fbbf24">📡</div>
+          <div class="stat-icon-badge" style="background: rgba(251,191,36,0.15); color: var(--airx-amber)">📡</div>
         </div>
         <div class="stat-value">{{ stats.today_conns }}</div>
         <div class="stat-desc">
-          {{ T('ActiveConns') }} <span style="color:#fbbf24;font-weight:600">{{ stats.active_conns }}</span>
+          {{ T('ActiveConns') }} <span class="conn-active">{{ stats.active_conns }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-card-top">
           <div class="stat-title">{{ T('Users') }}</div>
-          <div class="stat-icon-badge" style="background: rgba(167,139,250,0.15); color: #a78bfa">👥</div>
+          <div class="stat-icon-badge" style="background: rgba(167,139,250,0.15); color: var(--airx-violet)">👥</div>
         </div>
         <div class="stat-value">{{ stats.total_users }}</div>
         <div class="stat-desc">{{ T('RegisteredUsers') }}</div>
@@ -96,7 +96,7 @@
             <el-table-column prop="version" :label="T('Version')" width="80"/>
             <el-table-column :label="T('LastOnlineTime')" width="120">
               <template #default="{row}">
-                <span style="color:#9a9aa5">{{ fmtAgo(row.last_online_time) }}</span>
+                <span class="cell-muted">{{ fmtAgo(row.last_online_time) }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -124,7 +124,7 @@
             </el-table-column>
             <el-table-column prop="created_at" :label="T('Time')" width="100">
               <template #default="{row}">
-                <span style="color:#9a9aa5">{{ (row.created_at||'').slice(11,19) }}</span>
+                <span class="cell-muted">{{ (row.created_at||'').slice(11,19) }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -189,8 +189,9 @@
   gap: 14px; margin-bottom: 16px;
 }
 .stat-card {
-  background: rgba(28,28,34,0.62); backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+  background: var(--airx-card-bg); backdrop-filter: blur(var(--airx-glass-blur));
+  -webkit-backdrop-filter: blur(var(--airx-glass-blur));
+  border: 1px solid var(--airx-border-glow); border-radius: 12px;
   padding: 16px 20px; display: flex; flex-direction: column; gap: 10px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.35); transition: border-color .2s ease, box-shadow .2s ease;
 }
@@ -201,14 +202,17 @@
 .stat-desc { font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.6; }
 .stat-icon-badge { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.conn-active { color: var(--airx-amber); font-weight: 600; }
+.cell-muted { color: var(--el-text-color-secondary); }
 
 .dash-cols {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px,100%), 1fr));
   gap: 16px; margin-top: 16px;
 }
 .section-card {
-  background: rgba(28,28,34,0.62); backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+  background: var(--airx-card-bg); backdrop-filter: blur(var(--airx-glass-blur));
+  -webkit-backdrop-filter: blur(var(--airx-glass-blur));
+  border: 1px solid var(--airx-border-glow); border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.35); overflow: hidden;
 }
 .section-card-header { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
@@ -233,8 +237,8 @@
   --el-table-header-bg-color: rgba(255,255,255,0.04);
   --el-table-row-hover-bg-color: rgba(255,255,255,0.06);
   --el-table-border-color: rgba(255,255,255,0.07);
-  --el-table-text-color: #e5e5e5;
-  --el-table-header-text-color: #9a9aa5;
+  --el-table-text-color: var(--el-text-color-primary);
+  --el-table-header-text-color: var(--el-text-color-secondary);
   background: transparent;
 }
 :deep(.glass-table.el-table::before) { display: none; }

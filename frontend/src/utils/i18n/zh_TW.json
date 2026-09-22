@@ -649,5 +649,11 @@
   },
   "TfaRequired": {
     "One": "請輸入兩步驗證動態碼"
+  },
+  "NotFound": {
+    "One": "頁面未找到"
+  },
+  "BackHome": {
+    "One": "返回首頁"
   }
 }
